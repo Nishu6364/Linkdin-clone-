@@ -9,35 +9,30 @@ import { userDataContext } from '../context/UserContext';
 import { authDataContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Navigate, useNavigate } from 'react-router-dom';
-
 function Nav() {
-  let [activeSearch, setActiveSearch] = useState(false);
-  let { userData, setUserData ,handleGetProfile} = useContext(userDataContext);
-  let [showPopup, setShowPopup] = useState(false);
-  let { serverUrl } = useContext(authDataContext);
-  let navigate = useNavigate();
-  let [searchInput, setSearchInput] = useState("");
-  let [searchData, setSearchData] = useState([]);
-
-  //
-  const handleSignOut = async () => {
+    let [activeSearch,setActiveSearch]=useState(false)
+    let {userData,setUserData,handleGetProfile}=useContext(userDataContext)
+    let [showPopup,setShowPopup]=useState(false)
+    let navigate=useNavigate()
+let {serverUrl}=useContext(authDataContext)
+let [searchInput,setSearchInput]=useState("")
+let [searchData,setSearchData]=useState([])
+const handleSignOut=async ()=>{
     try {
-      let result = await axios.get(serverUrl + "/api/auth/logout", {
-        withCredentials: true,
-      });
-      setUserData(null);
-      navigate("/login");
-      console.log(result);
+        let result =await axios.get(serverUrl+"/api/auth/logout",{withCredentials:true})
+        setUserData(null)
+        navigate("/login")
+        console.log(result);
+      
     } catch (error) {
-      console.log(error);
+        console.log(error);
     }
-  };
+}
 
 const handleSearch=async ()=>{
 try {
   let result=await axios.get(`${serverUrl}/api/user/search?query=${searchInput}`,{withCredentials:true})
-  console.log(result.data);
-  setSearchData(result.data)
+setSearchData(result.data)
 } catch (error) {
   setSearchData([])
   console.log(error)
@@ -45,15 +40,13 @@ try {
 }
 
 useEffect(()=>{
-  if(searchInput.trim() !== "") {
-    handleSearch()
-  } else {
-    setSearchData([])
-  }
+
+  handleSearch()
+
 },[searchInput])
 
 
-   return (
+  return (
     <div className='w-full h-[80px] bg-[white] fixed top-0 shadow-lg flex justify-between md:justify-around items-center px-[10px] left-0 z-[80]'>
         <div className='flex justify-center items-center gap-[10px] '>
       <div onClick={()=>{

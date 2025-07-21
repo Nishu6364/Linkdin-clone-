@@ -8,14 +8,16 @@ import cors from "cors";
 import userRouter from "./routes/user.routes.js";
 import postRouter from "./routes/post.route.js";
 import connectionRouter from "./routes/connection.route.js";
+
 import http from "http";
 import { Server } from "socket.io";
+import notificationRouter from "./routes/notification.routes.js";
 
 dotenv.config();
 let app = express();
 let server = http.createServer(app);
 export const io = new Server(server, {
-  cors: {
+  cors: { 
     origin: ["http://localhost:5173", "http://localhost:5174"],
     credentials: true,
   },
@@ -34,6 +36,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/post", postRouter);
 app.use("/api/connection", connectionRouter);
+app.use("/api/notification",notificationRouter)
 
 export const userSocketMap = new Map();
 

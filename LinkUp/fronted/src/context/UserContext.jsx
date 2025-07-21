@@ -35,6 +35,8 @@ const getPost=async ()=>{
   }
 }
 
+
+
 const handleGetProfile=async (userName)=>{
    try {
     let result=await axios.get(serverUrl+`/api/user/profile/${userName}`,{
@@ -56,7 +58,7 @@ getCurrentUser();
 
 
     const value={
-        userData,setUserData,edit,setEdit,postData,setPostData,getPost
+        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData
     }
   return (
     <div>

@@ -120,6 +120,7 @@ const handleSaveProfile=async ()=>{
     formdata.append("userName",userName)
     formdata.append("headline",headline)
     formdata.append("location",location)
+    formdata.append("gender",gender)
     formdata.append("skills",JSON.stringify(skills))
     formdata.append("education",JSON.stringify(education))
     formdata.append("experience",JSON.stringify(experience))
@@ -140,6 +141,18 @@ const handleSaveProfile=async ()=>{
   } catch (error) {
     console.log(error);
     setSaving(false)
+    
+    // Display more specific error messages to the user
+    let errorMessage = "Failed to update profile. Please try again.";
+    
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    // You can display this error message in a toast or alert
+    alert(errorMessage);
   }
 }
 

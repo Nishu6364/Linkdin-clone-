@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import Nav from '../componenets/Nav';
+import Nav from '../components/Nav';
 import { authDataContext } from '../context/AuthContext';
 import { userDataContext } from '../context/UserContext';
 import axios from 'axios';

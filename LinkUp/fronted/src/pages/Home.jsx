@@ -159,7 +159,7 @@ getPost()
 ))}
           </div>}
           {suggestedUser.length==0 && <div>
-          No Suggested Users
+            No Suggested Users
           </div>}
        </div>
 

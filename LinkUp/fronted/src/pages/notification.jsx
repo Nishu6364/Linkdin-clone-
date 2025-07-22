@@ -54,7 +54,7 @@ useEffect(()=>{
         <div>
 Notifications {notificationData.length}
 </div>
-{notificationData>0 && <button className='min-w-[100px] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleClearAllNotification}>clear all</button>}
+{notificationData.length>0 && <button className='min-w-[100px] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleClearAllNotification}>clear all</button>}
 
       </div>
       

@@ -46,11 +46,13 @@ function Post({ id, author, like, comment, description, image,createdAt }) {
       useEffect(()=>{
         socket.on("likeUpdated",({postId,likes})=>{
           if(postId==id){
+            console.log("Like updated for post:", postId, "New likes:", likes)
             setLikes(likes)
           }
         })
         socket.on("commentAdded",({postId,comm})=>{
           if(postId==id){
+            console.log("Comment added for post:", postId, "New comments:", comm)
             setComments(comm)
           }
         })
@@ -106,7 +108,7 @@ socket.off("commentAdded")
 <div className='w-full flex justify-between items-center p-[20px] border-b-2 border-gray-500'>
 <div className='flex items-center justify-center gap-[5px] text-[18px]'>
     <BiLike className='text-[#1ebbff] w-[20px] h-[20px]'/><span >{likes.length}</span></div>
-<div className='flex items-center justify-center gap-[5px] text-[18px] cursor-pointer' onClick={()=>setShowComment(prev=>!prev)}><span>{comment.length}</span><span>comments</span></div>
+<div className='flex items-center justify-center gap-[5px] text-[18px] cursor-pointer' onClick={()=>setShowComment(prev=>!prev)}><span>{comments.length}</span><span>comments</span></div>
 </div>
 <div className='flex justify-start items-center w-full p-[20px] gap-[20px]'>
 {!likes.includes(userData._id) &&  <div className='flex justify-center items-center gap-[5px] cursor-pointer' onClick={handleLike}>

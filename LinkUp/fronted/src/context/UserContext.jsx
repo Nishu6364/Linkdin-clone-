@@ -4,7 +4,12 @@ import axios from 'axios'
  import { useNavigate } from 'react-router-dom'
 export const userDataContext=createContext()
 import {io} from "socket.io-client"
-export let socket=io(import.meta.env.VITE_SERVER_URL || "https://linkup-backend-blwa.onrender.com")
+
+// Initialize socket with proper configuration
+export let socket = io(import.meta.env.VITE_SERVER_URL || "https://linkup-backend-blwa.onrender.com", {
+  withCredentials: true,
+  transports: ['websocket', 'polling']
+})
 
 function UserContext({children}) {
 let [userData,setUserData]=useState(null)
@@ -56,7 +61,26 @@ const handleGetProfile=async (userName)=>{
 useEffect(() => {
 getCurrentUser();
  getPost()
-}, []);
+ 
+ // Register socket connection when user data is available
+ if(userData && userData._id) {
+   console.log("Registering socket for user:", userData._id)
+   socket.emit("register", userData._id)
+   
+   socket.on("connect", () => {
+     console.log("Socket connected:", socket.id)
+   })
+   
+   socket.on("disconnect", () => {
+     console.log("Socket disconnected")
+   })
+ }
+ 
+ return () => {
+   socket.off("connect")
+   socket.off("disconnect")
+ }
+}, [userData]);
 
 
     const value={

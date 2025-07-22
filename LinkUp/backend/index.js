@@ -18,7 +18,7 @@ let app = express();
 let server = http.createServer(app);
 export const io = new Server(server, {
   cors: { 
-    origin: ["https://linkup-frontend-voty.onrender.com"],
+    origin: ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:3000"],
     credentials: true,
   },
 });
@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["https://linkup-frontend-voty.onrender.com"],
+    origin: ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:3000"],
     credentials: true,
   })
 );

@@ -17,6 +17,7 @@ let {serverUrl}=useContext(authDataContext)
 let [edit,setEdit]=useState(false)
  let [postData,setPostData]=useState([])
 let [profileData,setProfileData]=useState([])
+let [notificationCount,setNotificationCount]=useState(0)
  let navigate=useNavigate()
 const getCurrentUser=async ()=>{
     try {
@@ -56,11 +57,22 @@ const handleGetProfile=async (userName)=>{
    }
 }
 
+const getNotificationCount=async ()=>{
+  try {
+    let result=await axios.get(serverUrl+"/api/notification/count",{withCredentials:true})
+    setNotificationCount(result.data.count)
+  } catch (error) {
+    console.log(error)
+    setNotificationCount(0)
+  }
+}
+
 
 
 useEffect(() => {
 getCurrentUser();
  getPost()
+ getNotificationCount()
  
  // Register socket connection when user data is available
  if(userData && userData._id) {
@@ -74,17 +86,24 @@ getCurrentUser();
    socket.on("disconnect", () => {
      console.log("Socket disconnected")
    })
+
+   // Listen for new notifications
+   socket.on("newNotification", () => {
+     console.log("New notification received")
+     getNotificationCount()
+   })
  }
  
  return () => {
    socket.off("connect")
    socket.off("disconnect")
+   socket.off("newNotification")
  }
 }, [userData]);
 
 
     const value={
-        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData
+        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount
     }
   return (
     <div>

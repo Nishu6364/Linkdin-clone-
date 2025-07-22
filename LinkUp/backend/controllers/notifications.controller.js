@@ -1,5 +1,14 @@
 import Notification from "../models/notification.model.js"
 
+export const getNotificationCount=async (req,res)=>{
+    try {
+        let count=await Notification.countDocuments({receiver:req.userId})
+        return res.status(200).json({count})
+    } catch (error) {
+        return res.status(500).json({message:`get notification count error ${error}`})
+    }
+}
+
 export const getNotifications=async (req,res)=>{
     try {
         

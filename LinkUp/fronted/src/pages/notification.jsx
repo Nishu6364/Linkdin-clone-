@@ -8,13 +8,15 @@ import { userDataContext } from '../context/UserContext';
 
 function Notification() {
   const { serverUrl } = useContext(authDataContext);
-  const { userData } = useContext(userDataContext);
+  const { userData, getNotificationCount } = useContext(userDataContext);
   const [notificationData, setNotificationData] = useState([]);
 
   const handleGetNotification = async () => {
     try {
       const result = await axios.get(`${serverUrl}/api/notification/get`, { withCredentials: true });
       setNotificationData(result.data);
+      // Update notification count in context
+      getNotificationCount();
     } catch (error) {
       console.log(error);
     }

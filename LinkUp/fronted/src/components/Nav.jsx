@@ -11,7 +11,7 @@ import axios from 'axios';
 import { Navigate, useNavigate } from 'react-router-dom';
 function Nav() {
     let [activeSearch,setActiveSearch]=useState(false)
-    let {userData,setUserData,handleGetProfile}=useContext(userDataContext)
+    let {userData,setUserData,handleGetProfile,notificationCount}=useContext(userDataContext)
     let [showPopup,setShowPopup]=useState(false)
     let navigate=useNavigate()
 let {serverUrl}=useContext(authDataContext)
@@ -107,8 +107,15 @@ useEffect(()=>{
         <FaUserGroup className='w-[23px] h-[23px] text-gray-600'/>
         <div>My Networks</div>
         </div>
-        <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer' onClick={()=>navigate("/notification")}>
-        <IoNotificationsSharp className='w-[23px] h-[23px] text-gray-600'/>
+        <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer relative' onClick={()=>navigate("/notification")}>
+        <div className='relative'>
+          <IoNotificationsSharp className='w-[23px] h-[23px] text-gray-600'/>
+          {notificationCount > 0 && (
+            <div className='absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1'>
+              {notificationCount > 99 ? '99+' : notificationCount}
+            </div>
+          )}
+        </div>
         <div className='hidden md:block'>Notifications</div>
         </div>
         <div className='w-[50px] h-[50px] rounded-full overflow-hidden cursor-pointer' onClick={()=>setShowPopup(prev=>!prev)}>

@@ -1,93 +1,110 @@
-import React, { useContext, useEffect, useState } from 'react'
-import Nav from '../components/Nav'
-import { authDataContext } from '../context/AuthContext'
-import axios from 'axios'
+import React, { useContext, useEffect, useState } from 'react';
+import Nav from '../components/Nav';
+import { authDataContext } from '../context/AuthContext';
+import axios from 'axios';
 import { RxCross1 } from "react-icons/rx";
-import dp from "../assets/dp.webp"
+import dp from "../assets/dp.webp";
 import { userDataContext } from '../context/UserContext';
+
 function Notification() {
+  const { serverUrl } = useContext(authDataContext);
+  const { userData } = useContext(userDataContext);
+  const [notificationData, setNotificationData] = useState([]);
 
-let {serverUrl}=useContext(authDataContext)
-let [notificationData,setNotificationData]=useState([])
-let {userData}=useContext(userDataContext)
-const handleGetNotification=async ()=>{
+  const handleGetNotification = async () => {
     try {
-        let result=await axios.get(serverUrl+"/api/notification/get",{withCredentials:true})
-        setNotificationData(result.data)
+      const result = await axios.get(`${serverUrl}/api/notification/get`, { withCredentials: true });
+      setNotificationData(result.data);
     } catch (error) {
-        console.log(error)
+      console.log(error);
     }
-}
-const handledeleteNotification=async (id)=>{
-    try {
-        let result=await axios.delete(serverUrl+`/api/notification/deleteone/${id}`,{withCredentials:true})
-        await handleGetNotification()
-    } catch (error) {
-        console.log(error)
-    }
-}
-const handleClearAllNotification=async ()=>{
-    try {
-        let result=await axios.delete(serverUrl+"/api/notification",{withCredentials:true})
-        await handleGetNotification()
-    } catch (error) {
-        console.log(error)
-    }
-}
-const handleMessage=(type)=>{
-if(type=="like"){
-    return "liked your post"
-}else if(type=="comment"){
-    return "commented on your post"
-}else{
-    return "Accept your connection"
-}
-}
+  };
 
-useEffect(()=>{
-    handleGetNotification()
-},[])
+  const handleDeleteNotification = async (id) => {
+    try {
+      await axios.delete(`${serverUrl}/api/notification/deleteone/${id}`, { withCredentials: true });
+      handleGetNotification();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleClearAllNotification = async () => {
+    try {
+      await axios.delete(`${serverUrl}/api/notification`, { withCredentials: true });
+      handleGetNotification();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleMessage = (type) => {
+    if (type === "like") return "liked your post";
+    else if (type === "comment") return "commented on your post";
+    else return "accepted your connection";
+  };
+
+  useEffect(() => {
+    handleGetNotification();
+  }, []);
+
   return (
-    <div className='w-screen h-[100vh] bg-[#f0efe7] pt-[100px] px-[20px] flex flex-col items-center gap-[40px]'>
-      <Nav/>
-      <div className='w-full h-[100px] bg-[white] shadow-lg rounded-lg flex items-center p-[10px] text-[22px] text-gray-600 justify-between'>
-        <div>
-Notifications {notificationData.length}
-</div>
-{notificationData.length>0 && <button className='min-w-[100px] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleClearAllNotification}>clear all</button>}
-
-      </div>
+    <div className='w-screen min-h-screen bg-[#f0efe7] pt-[100px] px-4 md:px-[40px] flex flex-col items-center gap-6'>
+      <Nav />
       
-            {notificationData.length>0 && <div className='w-[100%] max-w-[900px] bg-white shadow-lg rounded-lg flex flex-col gap-[20px] min-h-[100px]'>
-          {notificationData.map((noti,index)=>(
-              <div className='w-full min-h-[100px] p-[20px] flex justify-between items-center border-b-2 border-b-gray-200' key={index}>
-                <div>
-                <div className='flex justify-center items-center gap-[10px]'>
-      <div className='w-[60px] h-[60px] rounded-full overflow-hidden cursor-pointer'>
-                  <img src={noti.relatedUser.profileImage || dp} alt="" className='w-full h-full'/>
-              </div>
-              <div className='text-[19px] font-semibold text-gray-700'>{`${noti.relatedUser.firstName} ${noti.relatedUser.lastName} ${handleMessage(noti.type)}`}</div>
-              
-                  </div>
-                  {noti.relatedPost && 
-                  <div className='flex items-center gap-[10px] ml-[80px] h-[70px] overflow-hidden'>
-                  <div className='w-[80px] h-[50px] overflow-hidden'>
-                  <img src={noti.relatedPost.image} alt="" className='h-full'/>
-                  </div>
-                  <div>{noti.relatedPost.description}</div>
-               </div>
-                  }
- 
+      {/* Header */}
+      <div className='w-full max-w-[900px] bg-white shadow-lg rounded-lg flex flex-col md:flex-row md:items-center justify-between p-4 text-[20px] text-gray-600'>
+        <div>Notifications ({notificationData.length})</div>
+        {notificationData.length > 0 && (
+          <button 
+            className='mt-2 md:mt-0 min-w-[100px] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545] hover:bg-[#ec4545] hover:text-white transition duration-200'
+            onClick={handleClearAllNotification}
+          >
+            Clear All
+          </button>
+        )}
+      </div>
 
+      {/* Notification List */}
+      {notificationData.length > 0 && (
+        <div className='w-full max-w-[900px] bg-white shadow-lg rounded-lg flex flex-col gap-4 p-4'>
+          {notificationData.map((noti, index) => (
+            <div key={index} className='w-full flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 gap-4'>
+              <div className='flex-1'>
+                <div className='flex items-center gap-4'>
+                  <div className='w-[50px] h-[50px] rounded-full overflow-hidden bg-white border border-gray-300'>
+                    <img 
+                      src={noti.relatedUser.profileImage || dp} 
+                      alt="User" 
+                      className='w-full h-full object-contain' 
+                    />
                   </div>
-              <div className='flex justify-center items-center gap-[10px]' onClick={()=>handledeleteNotification(noti._id)}>
-      <RxCross1 className='w-[25px] cursor-pointer h-[25px] text-gray-800 font-bold ' />
-              </div> 
+                  <div className='text-[16px] md:text-[18px] font-semibold text-gray-700 break-words'>
+                    {`${noti.relatedUser.firstName} ${noti.relatedUser.lastName} ${handleMessage(noti.type)}`}
+                  </div>
+                </div>
+
+                {noti.relatedPost && (
+                  <div className='flex items-center gap-3 ml-[60px] mt-3 flex-wrap'>
+                    <div className='w-[80px] h-[50px] overflow-hidden rounded-md flex-shrink-0'>
+                      <img src={noti.relatedPost.image} alt="Post" className='w-full h-full object-cover' />
+                    </div>
+                    <div className='text-sm text-gray-600 break-words max-w-[calc(100%-100px)]'>
+                      {noti.relatedPost.description}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              <div onClick={() => handleDeleteNotification(noti._id)} className='cursor-pointer'>
+                <RxCross1 className='w-[20px] h-[20px] text-gray-800 hover:text-red-500 transition duration-150' />
+              </div>
+            </div>
           ))}
-        </div>}
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default Notification
+export default Notification;

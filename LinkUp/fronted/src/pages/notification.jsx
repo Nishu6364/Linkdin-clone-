@@ -71,10 +71,10 @@ Notifications {notificationData.length}
                   </div>
                   {noti.relatedPost && 
                   <div className='flex items-center gap-[10px] ml-[80px] h-[70px] overflow-hidden'>
-                  <div className='w-[80px] h-[50px] overflow-hidden'>
-                  <img src={noti.relatedPost.image} alt="" className='h-full'/>
+                  <div className='w-[80px] h-[50px] overflow-hidden rounded-md flex-shrink-0'>
+                  <img src={noti.relatedPost.image} alt="" className='w-full h-full object-cover'/>
                   </div>
-                  <div>{noti.relatedPost.description}</div>
+                  <div className='text-sm text-gray-600 truncate'>{noti.relatedPost.description}</div>
                </div>
                   }
  

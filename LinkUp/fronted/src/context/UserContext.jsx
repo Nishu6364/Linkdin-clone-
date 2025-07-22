@@ -79,10 +79,6 @@ const logout = async () => {
     console.log("Logout error:", error);
   }
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 9483f8f343f52f2b1df380c8565ccf5752864567
 
 // Initial load effect - runs only once
 useEffect(() => {
@@ -99,16 +95,6 @@ useEffect(() => {
 
 // Separate effect for socket registration to prevent re-registration
 useEffect(() => {
-<<<<<<< HEAD
-getCurrentUser();
- getPost()
- getNotificationCount()
-}, [])
-
-// Separate effect for socket registration to prevent re-registration
-useEffect(() => {
-=======
->>>>>>> 9483f8f343f52f2b1df380c8565ccf5752864567
  // Register socket connection when user data is available
  if(userData && userData._id) {
    console.log("Connecting and registering socket for user:", userData._id)

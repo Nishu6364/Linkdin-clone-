@@ -147,7 +147,7 @@ getPost()
         <h1 className='text-[20px] text-gray-600 font-semibold'>Suggested Users</h1>
          {suggestedUser.length>0 && <div className='flex flex-col gap-[10px]'>
 {suggestedUser.map((su)=>(
-  <div className='flex items-center gap-[10px] mt-[10px] cursor-pointer hover:bg-gray-200 rounded-lg p-[5px]' onClick={()=>handleGetProfile(su.userName)}>
+  <div key={su._id} className='flex items-center gap-[10px] mt-[10px] cursor-pointer hover:bg-gray-200 rounded-lg p-[5px]' onClick={()=>handleGetProfile(su.userName)}>
   <div className='w-[40px] h-[40px] rounded-full overflow-hidden'>
             <img src={su.profileImage || dp} alt="" className='w-full h-full'/>
         </div>

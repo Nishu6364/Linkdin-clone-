@@ -8,7 +8,7 @@ import { FaRegCheckCircle } from "react-icons/fa";
 import { RxCrossCircled } from "react-icons/rx";
 import io from "socket.io-client"
 
-const socket=io("https://linkup-backend-blwa.onrender.com")
+const socket=io(import.meta.env.VITE_SERVER_URL || "https://linkup-backend-blwa.onrender.com")
 function Network() {
     let { serverUrl } = useContext(authDataContext);
     let [connection, setConnection] = useState([]);

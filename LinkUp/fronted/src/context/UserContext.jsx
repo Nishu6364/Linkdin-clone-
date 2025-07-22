@@ -4,7 +4,7 @@ import axios from 'axios'
  import { useNavigate } from 'react-router-dom'
 export const userDataContext=createContext()
 import {io} from "socket.io-client"
-export let socket=io("https://linkup-backend-blwa.onrender.com")
+export let socket=io(import.meta.env.VITE_SERVER_URL || "https://linkup-backend-blwa.onrender.com")
 
 function UserContext({children}) {
 let [userData,setUserData]=useState(null)

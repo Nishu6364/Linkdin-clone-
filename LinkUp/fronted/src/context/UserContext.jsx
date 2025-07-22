@@ -8,7 +8,8 @@ import {io} from "socket.io-client"
 // Initialize socket with proper configuration
 export let socket = io(import.meta.env.VITE_SERVER_URL || "https://linkup-backend-blwa.onrender.com", {
   withCredentials: true,
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  autoConnect: false // Prevent auto connection until user is authenticated
 })
 
 function UserContext({children}) {
@@ -23,10 +24,11 @@ const getCurrentUser=async ()=>{
     try {
         let result=await axios.get(serverUrl+"/api/user/currentuser",{withCredentials:true})
         setUserData(result.data)
-        return
+        return true
     } catch (error) {
-        console.log(error);
+        console.log("Authentication failed:", error);
         setUserData(null)
+        return false
     }
 }
 
@@ -39,7 +41,7 @@ const getPost=async ()=>{
     setPostData(result.data)
    
   } catch (error) {
-    console.log(error)
+    console.log("Failed to get posts:", error)
   }
 }
 
@@ -62,48 +64,70 @@ const getNotificationCount=async ()=>{
     let result=await axios.get(serverUrl+"/api/notification/count",{withCredentials:true})
     setNotificationCount(result.data.count)
   } catch (error) {
-    console.log(error)
+    console.log("Failed to get notification count:", error)
     setNotificationCount(0)
   }
 }
 
+const logout = async () => {
+  try {
+    await axios.get(serverUrl + "/api/auth/logout", { withCredentials: true });
+    // Clear user data first, which will trigger socket disconnect in useEffect
+    setUserData(null);
+    navigate("/login");
+  } catch (error) {
+    console.log("Logout error:", error);
+  }
+}
 
-
+// Initial load effect - runs only once
 useEffect(() => {
-getCurrentUser();
- getPost()
- getNotificationCount()
- 
+  const initializeApp = async () => {
+    const isAuthenticated = await getCurrentUser();
+    if (isAuthenticated) {
+      getPost();
+      getNotificationCount();
+    }
+  };
+  
+  initializeApp();
+}, []) // Empty dependency array ensures this runs only once
+
+// Separate effect for socket registration to prevent re-registration
+useEffect(() => {
  // Register socket connection when user data is available
  if(userData && userData._id) {
-   console.log("Registering socket for user:", userData._id)
+   console.log("Connecting and registering socket for user:", userData._id)
+   
+   // Connect socket if not already connected
+   if (!socket.connected) {
+     socket.connect();
+   }
+   
    socket.emit("register", userData._id)
    
-   socket.on("connect", () => {
-     console.log("Socket connected:", socket.id)
-   })
-   
-   socket.on("disconnect", () => {
-     console.log("Socket disconnected")
-   })
-
    // Listen for new notifications
-   socket.on("newNotification", () => {
+   const handleNewNotification = () => {
      console.log("New notification received")
      getNotificationCount()
-   })
+   }
+   
+   socket.on("newNotification", handleNewNotification)
+   
+   return () => {
+     socket.off("newNotification", handleNewNotification)
+   }
+ } else {
+   // Disconnect socket when user logs out
+   if (socket.connected) {
+     socket.disconnect();
+   }
  }
- 
- return () => {
-   socket.off("connect")
-   socket.off("disconnect")
-   socket.off("newNotification")
- }
-}, [userData]);
+}, [userData?._id]) // Only re-run when user ID changes
 
 
     const value={
-        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount
+        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount,logout
     }
   return (
     <div>

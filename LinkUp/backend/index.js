@@ -52,12 +52,22 @@ export const userSocketMap = new Map();
 
 io.on("connection",(socket) =>{
     console.log("user connected ",socket.id)
+    
     socket.on("register",(userId)=>{
         userSocketMap.set(userId,socket.id);
-       // console.log("user socket map",userSocketMap)
+        console.log(`User ${userId} registered with socket ${socket.id}`)
     })
-    socket.on("disconnected",(socket)=>{
+    
+    socket.on("disconnect",()=>{
         console.log("user disconnected",socket.id)
+        // Remove user from socket map on disconnect
+        for (const [userId, socketId] of userSocketMap.entries()) {
+            if (socketId === socket.id) {
+                userSocketMap.delete(userId);
+                console.log(`User ${userId} removed from socket map`)
+                break;
+            }
+        }
     })
 })
 

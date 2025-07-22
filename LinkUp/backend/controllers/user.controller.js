@@ -25,10 +25,44 @@ export const updateProfile = async (req, res) => {
     console.log("Request files:", req.files);
     console.log("User ID:", req.userId);
     
+    // Validate required fields
+    if (!req.userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
     let { firstName, lastName, userName, headline, location, gender } = req.body;
-    let skills = req.body.skills ? JSON.parse(req.body.skills) : [];
-    let education = req.body.education ? JSON.parse(req.body.education) : [];
-    let experience = req.body.experience ? JSON.parse(req.body.experience) : [];
+    
+    // Safely parse JSON fields with error handling
+    let skills = [];
+    let education = [];
+    let experience = [];
+
+    try {
+      if (req.body.skills && req.body.skills !== 'undefined') {
+        skills = JSON.parse(req.body.skills);
+      }
+    } catch (parseError) {
+      console.error("Error parsing skills:", parseError);
+      skills = [];
+    }
+
+    try {
+      if (req.body.education && req.body.education !== 'undefined') {
+        education = JSON.parse(req.body.education);
+      }
+    } catch (parseError) {
+      console.error("Error parsing education:", parseError);
+      education = [];
+    }
+
+    try {
+      if (req.body.experience && req.body.experience !== 'undefined') {
+        experience = JSON.parse(req.body.experience);
+      }
+    } catch (parseError) {
+      console.error("Error parsing experience:", parseError);
+      experience = [];
+    }
 
     console.log("Parsed data:", { firstName, lastName, userName, headline, location, gender, skills, education, experience });
 
@@ -67,20 +101,36 @@ export const updateProfile = async (req, res) => {
 
     console.log("Update fields before file processing:", updateFields);
 
-    if (req.files && req.files.profileImage) {
+    // Handle file uploads with better error handling
+    if (req.files && req.files.profileImage && req.files.profileImage[0]) {
       console.log("Processing profile image...");
-      const profileImage = await uploadOnCloudinary(req.files.profileImage[0].path);
-      if (profileImage) {
-        updateFields.profileImage = profileImage;
-        console.log("Profile image uploaded:", profileImage);
+      try {
+        const profileImageUrl = await uploadOnCloudinary(req.files.profileImage[0].path);
+        if (profileImageUrl) {
+          updateFields.profileImage = profileImageUrl;
+          console.log("Profile image uploaded:", profileImageUrl);
+        } else {
+          console.error("Failed to upload profile image to Cloudinary");
+        }
+      } catch (uploadError) {
+        console.error("Error uploading profile image:", uploadError);
+        // Don't fail the entire request if image upload fails
       }
     }
-    if (req.files && req.files.coverImage) {
+
+    if (req.files && req.files.coverImage && req.files.coverImage[0]) {
       console.log("Processing cover image...");
-      const coverImage = await uploadOnCloudinary(req.files.coverImage[0].path);
-      if (coverImage) {
-        updateFields.coverImage = coverImage;
-        console.log("Cover image uploaded:", coverImage);
+      try {
+        const coverImageUrl = await uploadOnCloudinary(req.files.coverImage[0].path);
+        if (coverImageUrl) {
+          updateFields.coverImage = coverImageUrl;
+          console.log("Cover image uploaded:", coverImageUrl);
+        } else {
+          console.error("Failed to upload cover image to Cloudinary");
+        }
+      } catch (uploadError) {
+        console.error("Error uploading cover image:", uploadError);
+        // Don't fail the entire request if image upload fails
       }
     }
 

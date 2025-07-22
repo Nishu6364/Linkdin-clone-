@@ -1,10 +1,8 @@
 import React, { useContext, useEffect ,useState} from 'react';
 import { authDataContext } from '../context/AuthContext';
 import axios from 'axios';
-import io from 'socket.io-client';
-import { userDataContext } from '../context/UserContext';
+import { userDataContext, socket } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
-const socket = io("https://linkup-backend-blwa.onrender.com");
 function ConnectionButton({ userId }) {
     let { serverUrl } = useContext(authDataContext);
     let {userData,setUserData} = useContext(userDataContext);
@@ -46,20 +44,17 @@ const handleGetStatus = async () => {
 
 
     useEffect(() => {
-        socket.emit("register", userData._id)
         handleGetStatus();
+        
         socket.on("statusUpdate", ({updateUserId, newStatus}) => {
             if (updateUserId === userId) {
                 setStatus(newStatus);
             }
-
-
-            setStatus(newStatus);
-    })
-    
-   return () => {
-        socket.off("statusUpdate");
-    }
+        })
+        
+        return () => {
+            socket.off("statusUpdate");
+        }
     }, [userId]);
 
     const handleClick=async () => {

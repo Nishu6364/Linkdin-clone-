@@ -6,6 +6,9 @@ import axios from 'axios';
 import dp from "../assets/dp.webp";
 import { FaRegCheckCircle } from "react-icons/fa";
 import { RxCrossCircled } from "react-icons/rx";
+import io from "socket.io-client"
+
+const socket=io("http://localhost:8000")
 function Network() {
     let { serverUrl } = useContext(authDataContext);
     let [connection, setConnection] = useState([]);

@@ -24,10 +24,11 @@ const getCurrentUser=async ()=>{
     try {
         let result=await axios.get(serverUrl+"/api/user/currentuser",{withCredentials:true})
         setUserData(result.data)
-        return
+        return true
     } catch (error) {
-        console.log(error);
+        console.log("Authentication failed:", error);
         setUserData(null)
+        return false
     }
 }
 
@@ -40,7 +41,7 @@ const getPost=async ()=>{
     setPostData(result.data)
    
   } catch (error) {
-    console.log(error)
+    console.log("Failed to get posts:", error)
   }
 }
 
@@ -63,7 +64,7 @@ const getNotificationCount=async ()=>{
     let result=await axios.get(serverUrl+"/api/notification/count",{withCredentials:true})
     setNotificationCount(result.data.count)
   } catch (error) {
-    console.log(error)
+    console.log("Failed to get notification count:", error)
     setNotificationCount(0)
   }
 }
@@ -78,10 +79,27 @@ const logout = async () => {
     console.log("Logout error:", error);
   }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9483f8f343f52f2b1df380c8565ccf5752864567
 
-
+// Initial load effect - runs only once
 useEffect(() => {
+  const initializeApp = async () => {
+    const isAuthenticated = await getCurrentUser();
+    if (isAuthenticated) {
+      getPost();
+      getNotificationCount();
+    }
+  };
+  
+  initializeApp();
+}, []) // Empty dependency array ensures this runs only once
+
+// Separate effect for socket registration to prevent re-registration
+useEffect(() => {
+<<<<<<< HEAD
 getCurrentUser();
  getPost()
  getNotificationCount()
@@ -89,6 +107,8 @@ getCurrentUser();
 
 // Separate effect for socket registration to prevent re-registration
 useEffect(() => {
+=======
+>>>>>>> 9483f8f343f52f2b1df380c8565ccf5752864567
  // Register socket connection when user data is available
  if(userData && userData._id) {
    console.log("Connecting and registering socket for user:", userData._id)

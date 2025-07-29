@@ -13,6 +13,16 @@ description:{
 image:{
     type:String
 },
+visibility:{
+    type:String,
+    enum:['public', 'connections', 'private'],
+    default:'public'
+},
+commentPermission:{
+    type:String,
+    enum:['everyone', 'connections', 'nobody'],
+    default:'everyone'
+},
 like:[
    {
     type: mongoose.Schema.Types.ObjectId,

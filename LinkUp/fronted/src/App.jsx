@@ -9,6 +9,7 @@ import { Navigate } from 'react-router-dom';
 import Network from './pages/Network';
 import Profile from './pages/Profile';
 import Notification from './pages/notification';
+import SavedPosts from './pages/SavedPosts';
 
 function App() {
   let { userData }=useContext(userDataContext)
@@ -20,6 +21,7 @@ function App() {
     <Route path ='/Network' element={userData?<Network/>:<Navigate to="/login"/>}/>
     <Route path ='/Profile' element={userData?<Profile/>:<Navigate to="/login"/>}/>
       <Route path='/notification' element={userData?<Notification/>:<Navigate to="/login"/>}/>
+    <Route path='/saved-posts' element={userData?<SavedPosts/>:<Navigate to="/login"/>}/>
 
    </Routes>
   )

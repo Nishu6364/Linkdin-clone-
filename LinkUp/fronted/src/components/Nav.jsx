@@ -4,6 +4,7 @@ import { IoSearchSharp } from "react-icons/io5";
 import { TiHome } from "react-icons/ti";
 import { FaUserGroup } from "react-icons/fa6";
 import { IoNotificationsSharp } from "react-icons/io5";
+import { FaRegBookmark } from "react-icons/fa";
 import dp from "../assets/dp.webp"
 import { userDataContext } from '../context/UserContext';
 import { authDataContext } from '../context/AuthContext';
@@ -92,6 +93,10 @@ useEffect(()=>{
         <div className='flex  w-full items-center justify-start text-gray-600 gap-[10px] cursor-pointer' onClick={()=>navigate("/network")}>
         <FaUserGroup className='w-[23px] h-[23px] text-gray-600 '/>
         <div>My Networks</div>
+        </div>
+        <div className='flex  w-full items-center justify-start text-gray-600 gap-[10px] cursor-pointer' onClick={()=>{navigate("/saved-posts"); setShowPopup(false)}}>
+        <FaRegBookmark className='w-[23px] h-[23px] text-gray-600 '/>
+        <div>Saved Posts</div>
         </div>
         <button className='w-[100%] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleSignOut}>Sign Out</button>
         </div>

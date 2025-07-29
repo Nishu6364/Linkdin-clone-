@@ -19,6 +19,7 @@ let [edit,setEdit]=useState(false)
  let [postData,setPostData]=useState([])
 let [profileData,setProfileData]=useState([])
 let [notificationCount,setNotificationCount]=useState(0)
+let [savedPostsData, setSavedPostsData] = useState([])
  let navigate=useNavigate()
 const getCurrentUser=async ()=>{
     try {
@@ -69,6 +70,16 @@ const getNotificationCount=async ()=>{
   }
 }
 
+const getSavedPosts = async () => {
+  try {
+    let result = await axios.get(serverUrl + "/api/saved", { withCredentials: true })
+    setSavedPostsData(result.data)
+  } catch (error) {
+    console.log("Failed to get saved posts:", error)
+    setSavedPostsData([])
+  }
+}
+
 const logout = async () => {
   try {
     await axios.get(serverUrl + "/api/auth/logout", { withCredentials: true });
@@ -111,11 +122,29 @@ useEffect(() => {
      console.log("New notification received")
      getNotificationCount()
    }
+
+   // Listen for deleted posts and update the post list
+   const handlePostDeleted = ({ postId }) => {
+     console.log("Post deleted:", postId)
+     setPostData(prevPosts => prevPosts.filter(post => post._id !== postId))
+   }
+
+   // Listen for updated posts and update the post list
+   const handlePostUpdated = ({ postId, updatedPost }) => {
+     console.log("Post updated:", postId)
+     setPostData(prevPosts => prevPosts.map(post => 
+       post._id === postId ? updatedPost : post
+     ))
+   }
    
    socket.on("newNotification", handleNewNotification)
+   socket.on("postDeleted", handlePostDeleted)
+   socket.on("postUpdated", handlePostUpdated)
    
    return () => {
      socket.off("newNotification", handleNewNotification)
+     socket.off("postDeleted", handlePostDeleted)
+     socket.off("postUpdated", handlePostUpdated)
    }
  } else {
    // Disconnect socket when user logs out
@@ -127,7 +156,7 @@ useEffect(() => {
 
 
     const value={
-        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount,logout
+        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount,logout,savedPostsData,setSavedPostsData,getSavedPosts
     }
   return (
     <div>

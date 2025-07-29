@@ -8,6 +8,7 @@ import cors from "cors";
 import userRouter from "./routes/user.routes.js";
 import postRouter from "./routes/post.route.js";
 import connectionRouter from "./routes/connection.route.js";
+import savedPostRouter from "./routes/savedPost.routes.js";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -47,6 +48,7 @@ app.use("/api/user", userRouter);
 app.use("/api/post", postRouter);
 app.use("/api/connection", connectionRouter);
 app.use("/api/notification",notificationRouter)
+app.use("/api/saved", savedPostRouter);
 
 export const userSocketMap = new Map();
 

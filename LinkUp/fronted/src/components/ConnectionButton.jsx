@@ -13,6 +13,7 @@ function ConnectionButton({ userId }) {
         try {
             let result =await axios.post(`${serverUrl}/api/connection/send/${userId}`, {}, { withCredentials: true });
             console.log(result);
+            handleGetStatus(); // Refresh status after sending connection
         } catch (error) {
             console.error("Error connecting:", error);
         }
@@ -23,6 +24,7 @@ function ConnectionButton({ userId }) {
         try {
             let result = await axios.delete(`${serverUrl}/api/connection/remove/${userId}`, { withCredentials: true });
             console.log(result);
+            handleGetStatus(); // Refresh status after removing connection
         } catch (error) {
             console.error("Error receiving connection:", error);
         }
@@ -46,8 +48,8 @@ const handleGetStatus = async () => {
     useEffect(() => {
         handleGetStatus();
         
-        socket.on("statusUpdate", ({updateUserId, newStatus}) => {
-            if (updateUserId === userId) {
+        socket.on("statusUpdate", ({updatedUserId, newStatus}) => {
+            if (updatedUserId === userId) {
                 setStatus(newStatus);
             }
         })

@@ -41,8 +41,13 @@ let result=await axios.post(serverUrl+"/api/post/create",formdata,{withCredentia
 console.log(result)
 setPosting(false)
 setUploadPost(false)
+setDescription("")
+setFrontendImage("")
+setBackendImage("")
+// Refresh posts to show the new post
+getPost()
   } catch (error) {
-    setPostng(false)
+    setPosting(false)
     console.log(error);
     
   }

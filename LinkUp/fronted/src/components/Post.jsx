@@ -18,6 +18,27 @@ import ConnectionButton from './ConnectionButton';
 
 function Post({ id, author, like, comment, description, image,createdAt }) {
     
+    // Early return if author data is not available yet
+    if (!author) {
+        return (
+            <div className="w-full bg-white p-4 rounded-lg shadow-md">
+                <div className="animate-pulse">
+                    <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gray-300 h-16 w-16"></div>
+                        <div className="space-y-2">
+                            <div className="h-4 bg-gray-300 rounded w-32"></div>
+                            <div className="h-3 bg-gray-300 rounded w-24"></div>
+                        </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        <div className="h-4 bg-gray-300 rounded"></div>
+                        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
     let [more,setMore]=useState(false)
   let {serverUrl}=useContext(authDataContext)
   let {userData,setUserData,getPost,handleGetProfile}=useContext(userDataContext)
@@ -235,13 +256,13 @@ socket.off("postUpdated")
 
           <div className='flex justify-between items-center'>
 
-            <div className='flex justify-center items-start gap-[10px]' onClick={()=>handleGetProfile(author.userName)}>
+            <div className='flex justify-center items-start gap-[10px]' onClick={()=>handleGetProfile(author?.userName)}>
                 <div className='w-[70px] h-[70px] rounded-full overflow-hidden flex items-center justify-center  cursor-pointer' >
-                    <img src={author.profileImage || dp} alt="" className='h-full' />
+                    <img src={author?.profileImage || dp} alt="" className='h-full' />
                 </div>
                 <div>
-                <div className='text-[22px] font-semibold'>{`${author.firstName} ${author.lastName}` }</div>
-                <div className='text-[16px]'>{author.headline}</div>
+                <div className='text-[22px] font-semibold'>{`${author?.firstName || ''} ${author?.lastName || ''}` }</div>
+                <div className='text-[16px]'>{author?.headline || ''}</div>
                 <div className='flex items-center gap-[5px] text-[14px] text-gray-500'>
                   <span>{moment(createdAt).fromNow()}</span>
                   {postVisibility === 'public' && <MdPublic className="w-[14px] h-[14px]" />}
@@ -251,7 +272,7 @@ socket.off("postUpdated")
                 </div>
             </div>
             <div className="flex items-center gap-[10px]">
-              {userData._id != author._id && <ConnectionButton userId={author._id}/>}
+              {userData?._id !== author?._id && author?._id && <ConnectionButton userId={author._id}/>}
               
               {/* Universal three-dot menu for all users */}
               <div className="relative options-menu">
@@ -318,7 +339,7 @@ socket.off("postUpdated")
                     </button>
 
                     {/* Author-only options */}
-                    {userData._id === author._id && (
+                    {userData?._id === author?._id && (
                       <>
                         <hr className="my-[4px]" />
                         

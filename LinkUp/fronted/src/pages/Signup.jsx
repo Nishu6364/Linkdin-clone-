@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { authDataContext } from '../context/AuthContext'
 import axios from "axios"
 import { userDataContext } from '../context/UserContext'
+import Toast from '../components/Toast'
 
 function Signup() {
   const [show, setShow] = useState(false)
@@ -18,6 +19,7 @@ function Signup() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState("")
+  const [showToast, setShowToast] = useState(false)
   const handleSignUp = async (e) => {
     e.preventDefault()
     setErr("") // Clear previous errors
@@ -44,8 +46,15 @@ function Signup() {
       )
   
       console.log(result)
-      navigate("/")
       setUserData(result.data)
+      
+      // Show success toast
+      setShowToast(true)
+      
+      // Navigate after a short delay to let user see the toast
+      setTimeout(() => {
+        navigate("/")
+      }, 2000)
 
   
       // ✅ Clear inputs on success (stay on the page)
@@ -66,6 +75,14 @@ function Signup() {
 
   return (
     <div className='w-full h-screen bg-[white] flex flex-col items-center justify-start gap-[10px]'>
+      {showToast && (
+        <Toast 
+          message="Registration successful! Welcome email sent to your inbox." 
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      
       <div className='p-[30px] lg:p-[35px] w-full h-[120px] flex items-center'>
         <img src={logo} alt="logo" className="h-full object-contain" />
       </div>

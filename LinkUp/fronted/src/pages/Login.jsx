@@ -108,6 +108,13 @@ function Login() {
         </button>
 
         <p
+          className="text-center cursor-pointer text-[#2a9bd8] mb-2"
+          onClick={() => navigate("/forgot-password")}
+        >
+          Forgot Password?
+        </p>
+
+        <p
           className="text-center cursor-pointer"
           onClick={() => navigate("/signup")}
         >

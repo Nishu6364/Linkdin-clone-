@@ -57,6 +57,17 @@ app.get("/api/health", (req, res) => {
     });
 });
 
+// Add email configuration check endpoint
+app.get("/api/email-config", (req, res) => {
+    res.json({
+        emailConfigured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+        emailUser: process.env.EMAIL_USER ? 'Set' : 'Not set',
+        emailPass: process.env.EMAIL_PASS ? 'Set (hidden)' : 'Not set',
+        frontendUrl: process.env.FRONTEND_URL || 'Not set (using default)',
+        nodeEnv: process.env.NODE_ENV || 'Not set'
+    });
+});
+
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/post", postRouter);

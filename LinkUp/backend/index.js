@@ -38,10 +38,24 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"]
   })
 );
 let port = process.env.PORT || 4000;
+
+// Add health check endpoint
+app.get("/api/health", (req, res) => {
+    res.json({ 
+        message: "Server is running",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        cors: {
+            origin: req.get('Origin'),
+            credentials: req.get('Cookie') ? 'present' : 'not present'
+        }
+    });
+});
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);

@@ -63,6 +63,10 @@ Look at your production server logs for these error messages:
 
 ### Common Error Messages and Solutions:
 
+**"nodemailer.createTransporter is not a function"**
+- Solution: Use `createTransport` (not `createTransporter`) - this is a common typo
+- Fixed in the updated email.js file
+
 **"Email configuration missing"**
 - Solution: Set EMAIL_USER and EMAIL_PASS environment variables
 

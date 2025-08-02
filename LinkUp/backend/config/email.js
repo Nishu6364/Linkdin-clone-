@@ -3,11 +3,30 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
+// Enhanced transporter configuration for production
+const transporter = nodemailer.createTransporter({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    // Additional configuration for better reliability
+    pool: true,
+    maxConnections: 1,
+    rateDelta: 20000,
+    rateLimit: 5,
+    // Add timeout configurations
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 60000      // 60 seconds
+});
+
+// Verify transporter configuration on startup
+transporter.verify((error, success) => {
+    if (error) {
+        console.error('Email transporter configuration error:', error);
+    } else {
+        console.log('Email server is ready to send messages');
     }
 });
 

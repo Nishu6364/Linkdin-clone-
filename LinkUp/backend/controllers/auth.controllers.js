@@ -98,14 +98,26 @@ export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         
+        console.log('Forgot password request for:', email);
+        
         if (!email) {
+            console.log('No email provided in request');
             return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Check if environment variables are set
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.error('Email configuration missing. EMAIL_USER or EMAIL_PASS not set');
+            return res.status(500).json({ message: "Email service is not configured properly" });
         }
 
         const user = await User.findOne({ email });
         if (!user) {
+            console.log('User not found with email:', email);
             return res.status(404).json({ message: "User not found with this email" });
         }
+
+        console.log('User found, generating reset token for:', email);
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
@@ -116,25 +128,41 @@ export const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = resetTokenExpiry;
         await user.save();
 
+        console.log('Reset token saved, attempting to send email...');
+
         // Send reset email
         try {
             await sendResetPasswordEmail(user.email, resetToken, user.firstName);
+            console.log('Reset email sent successfully to:', user.email);
             return res.status(200).json({ 
                 message: "Password reset email sent successfully",
                 email: user.email 
             });
         } catch (emailError) {
             console.error('Failed to send reset email:', emailError);
+            console.error('Email error details:', {
+                message: emailError.message,
+                code: emailError.code,
+                command: emailError.command
+            });
+            
             // Clear the reset token if email fails
             user.resetPasswordToken = null;
             user.resetPasswordExpires = null;
             await user.save();
-            return res.status(500).json({ message: "Failed to send reset email" });
+            
+            return res.status(500).json({ 
+                message: "Failed to send reset email. Please check email configuration.",
+                error: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+            });
         }
 
     } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Server error in forgot password" });
+        console.error('Server error in forgot password:', error);
+        return res.status(500).json({ 
+            message: "Server error in forgot password",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 

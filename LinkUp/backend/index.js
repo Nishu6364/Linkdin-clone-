@@ -9,6 +9,7 @@ import userRouter from "./routes/user.routes.js";
 import postRouter from "./routes/post.route.js";
 import connectionRouter from "./routes/connection.route.js";
 import savedPostRouter from "./routes/savedPost.routes.js";
+import chatRouter from "./routes/chat.routes.js";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -74,6 +75,7 @@ app.use("/api/post", postRouter);
 app.use("/api/connection", connectionRouter);
 app.use("/api/notification",notificationRouter)
 app.use("/api/saved", savedPostRouter);
+app.use("/api/chat", chatRouter);
 
 export const userSocketMap = new Map();
 
@@ -83,17 +85,74 @@ io.on("connection",(socket) =>{
     socket.on("register",(userId)=>{
         userSocketMap.set(userId,socket.id);
         console.log(`User ${userId} registered with socket ${socket.id}`)
+        
+        // Join user to their personal room for direct messaging
+        socket.join(userId);
     })
+    
+    // Handle joining chat rooms
+    socket.on("joinChat", (chatId) => {
+        socket.join(chatId);
+        console.log(`Socket ${socket.id} joined chat ${chatId}`);
+    });
+    
+    // Handle leaving chat rooms
+    socket.on("leaveChat", (chatId) => {
+        socket.leave(chatId);
+        console.log(`Socket ${socket.id} left chat ${chatId}`);
+    });
+    
+    // Handle typing indicators
+    socket.on("typing", ({ chatId, userId, isTyping }) => {
+        socket.to(chatId).emit("userTyping", { userId, isTyping });
+    });
+    
+    // Handle user online status
+    socket.on("updateOnlineStatus", async (userId) => {
+        try {
+            const User = (await import('./models/user.model.js')).default;
+            await User.findByIdAndUpdate(userId, { 
+                isOnline: true, 
+                lastSeen: new Date() 
+            });
+            
+            // Broadcast online status to all connected users
+            socket.broadcast.emit("userOnline", userId);
+        } catch (error) {
+            console.error("Error updating online status:", error);
+        }
+    });
     
     socket.on("disconnect",()=>{
         console.log("user disconnected",socket.id)
-        // Remove user from socket map on disconnect
+        
+        // Update user offline status
+        let disconnectedUserId = null;
         for (const [userId, socketId] of userSocketMap.entries()) {
             if (socketId === socket.id) {
+                disconnectedUserId = userId;
                 userSocketMap.delete(userId);
                 console.log(`User ${userId} removed from socket map`)
                 break;
             }
+        }
+        
+        // Update user offline status in database
+        if (disconnectedUserId) {
+            (async () => {
+                try {
+                    const User = (await import('./models/user.model.js')).default;
+                    await User.findByIdAndUpdate(disconnectedUserId, { 
+                        isOnline: false, 
+                        lastSeen: new Date() 
+                    });
+                    
+                    // Broadcast offline status
+                    socket.broadcast.emit("userOffline", disconnectedUserId);
+                } catch (error) {
+                    console.error("Error updating offline status:", error);
+                }
+            })();
         }
     })
 })

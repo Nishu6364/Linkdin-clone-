@@ -5,6 +5,7 @@ import { TiHome } from "react-icons/ti";
 import { FaUserGroup } from "react-icons/fa6";
 import { IoNotificationsSharp } from "react-icons/io5";
 import { FaRegBookmark } from "react-icons/fa";
+import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import dp from "../assets/dp.webp"
 import { userDataContext } from '../context/UserContext';
 import { authDataContext } from '../context/AuthContext';
@@ -98,6 +99,10 @@ useEffect(()=>{
         <FaRegBookmark className='w-[23px] h-[23px] text-gray-600 '/>
         <div>Saved Posts</div>
         </div>
+        <div className='flex  w-full items-center justify-start text-gray-600 gap-[10px] cursor-pointer' onClick={()=>{navigate("/chat"); setShowPopup(false)}}>
+        <IoChatbubbleEllipsesOutline className='w-[23px] h-[23px] text-gray-600 '/>
+        <div>Messages</div>
+        </div>
         <button className='w-[100%] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleSignOut}>Sign Out</button>
         </div>
 }
@@ -111,6 +116,10 @@ useEffect(()=>{
         <div className='md:flex flex-col items-center justify-center text-gray-600 hidden cursor-pointer' onClick={()=>navigate("/network")}>
         <FaUserGroup className='w-[23px] h-[23px] text-gray-600'/>
         <div>My Networks</div>
+        </div>
+        <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer' onClick={()=>navigate("/chat")}>
+        <IoChatbubbleEllipsesOutline className='w-[23px] h-[23px] text-gray-600'/>
+        <div className='hidden md:block'>Messages</div>
         </div>
         <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer relative' onClick={()=>navigate("/notification")}>
         <div className='relative'>

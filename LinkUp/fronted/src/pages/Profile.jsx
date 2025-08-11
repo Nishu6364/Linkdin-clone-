@@ -10,6 +10,7 @@ import axios from 'axios';
 import EditProfile from '../components/EditProfile';
 import Post from '../components/Post';
 import ConnectionButton from '../components/ConnectionButton';
+import ChatButton from '../components/ChatButton';
 function Profile() {
 
     let {userData,setuserData,edit,setEdit,postData,setPostData,profileData,setProfileData}=useContext(userDataContext)
@@ -43,7 +44,16 @@ setProfilePost(postData.filter((post)=>post.author._id==profileData._id))
                     <div className='text-[16px]text-gray-500'>{`${profileData.connection.length} connection`}</div>
                    </div>
                    {profileData._id==userData._id &&  <button className='min-w-[150px] h-[40px] my-[20px] rounded-full border-2 ml-[20px] border-[#2dc0ff] text-[#2dc0ff] flex items-center justify-center gap-[10px]' onClick={()=>setEdit(true)}>Edit Profile <HiPencil /></button>}
-                   {profileData._id!=userData._id && <div className="ml-[20px] mt-[20px]"><ConnectionButton userId={profileData._id}/></div> }
+                   {profileData._id!=userData._id && 
+                     <div className="ml-[20px] mt-[20px] flex gap-[10px]">
+                       <ChatButton 
+                         userId={profileData._id} 
+                         userName={`${profileData.firstName} ${profileData.lastName}`}
+                         className="min-w-[120px] h-[40px] rounded-full bg-[#0073b1] text-white font-semibold hover:bg-[#005885] transition-colors"
+                       />
+                       <ConnectionButton userId={profileData._id}/>
+                     </div> 
+                   }
                   
         </div>
 <div className='w-full min-h-[100px] flex items-center p-[20px] text-[22px] text-gray-600 font-semibold bg-white shadow-lg rounded-lg'>{`Post (${profilePost.length})`}</div>

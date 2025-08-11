@@ -88,6 +88,18 @@ const userSchema=new mongoose.Schema({
 
 },{timestamps:true})
 
+// Virtual field for full name
+userSchema.virtual('name').get(function() {
+    const firstName = this.firstName || '';
+    const lastName = this.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || this.userName || 'Unknown User';
+});
+
+// Ensure virtual fields are serialized
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 const User = mongoose.model("User", userSchema);
 
 export default User

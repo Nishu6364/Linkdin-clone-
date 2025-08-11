@@ -6,98 +6,93 @@ import { io, userSocketMap } from '../index.js';
 // Get all chats for a user
 export const getUserChats = async (req, res) => {
     try {
-        const userId = req.user.id;
-
+        const userId = req.userId;
+        
         const chats = await Chat.find({
-            participants: userId,
-            isActive: true
-        })
-        .populate('participants', 'firstName lastName profilePicture isOnline lastSeen')
-        .populate('lastMessage')
-        .sort({ lastMessageTime: -1 });
+            participants: { $in: [userId] }
+        }).populate({
+            path: 'participants',
+            match: { _id: { $ne: userId } },
+            select: 'firstName lastName userName profileImage isOnline lastSeen'
+        }).populate('lastMessage')
+        .sort({ updatedAt: -1 });
 
-        // Format chats for frontend
-        const formattedChats = chats.map(chat => {
-            const otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
-            return {
-                _id: chat._id,
-                participant: otherParticipant,
-                lastMessage: chat.lastMessage,
-                lastMessageTime: chat.lastMessageTime,
-                createdAt: chat.createdAt,
-                updatedAt: chat.updatedAt
-            };
-        });
+        const filteredChats = chats.filter(chat => chat.participants.length > 0);
 
-        res.status(200).json(formattedChats);
+        // Transform the data to match frontend expectations
+        const transformedChats = filteredChats.map(chat => ({
+            _id: chat._id,
+            participant: chat.participants[0], // Get the other participant
+            lastMessage: chat.lastMessage,
+            lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
+            createdAt: chat.createdAt,
+            updatedAt: chat.updatedAt
+        }));
+
+        res.status(200).json(transformedChats);
     } catch (error) {
         console.error('Error fetching user chats:', error);
-        res.status(500).json({ message: 'Failed to fetch chats', error: error.message });
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
     }
 };
 
 // Create or get existing chat
 export const createOrGetChat = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { participantId } = req.body;
+        const { otherUserId } = req.params;
+        const userId = req.userId;
 
-        if (!participantId) {
-            return res.status(400).json({ message: 'Participant ID is required' });
-        }
-
-        if (userId === participantId) {
-            return res.status(400).json({ message: 'Cannot create chat with yourself' });
-        }
-
-        // Check if participant exists
-        const participant = await User.findById(participantId);
-        if (!participant) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Sort participant IDs to ensure consistent chat identification
-        const participants = [userId, participantId].sort();
-
-        // Check if chat already exists
         let chat = await Chat.findOne({
-            participants: { $all: participants }
-        }).populate('participants', 'firstName lastName profilePicture isOnline lastSeen');
+            participants: { $all: [userId, otherUserId] }
+        }).populate({
+            path: 'participants',
+            match: { _id: { $ne: userId } },
+            select: 'name profileImage isOnline lastSeen'
+        }).populate('lastMessage');
 
         if (!chat) {
-            // Create new chat
             chat = new Chat({
-                participants: participants
+                participants: [userId, otherUserId]
             });
             await chat.save();
             
-            // Populate participants
-            chat = await Chat.findById(chat._id)
-                .populate('participants', 'firstName lastName profilePicture isOnline lastSeen');
+            await chat.populate({
+                path: 'participants',
+                match: { _id: { $ne: userId } },
+                select: 'name profileImage isOnline lastSeen'
+            });
         }
 
-        // Format chat for frontend
-        const otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
-        const formattedChat = {
+        // Transform to match frontend expectations
+        const transformedChat = {
             _id: chat._id,
-            participant: otherParticipant,
+            participant: chat.participants[0],
             lastMessage: chat.lastMessage,
-            lastMessageTime: chat.lastMessageTime,
+            lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
             createdAt: chat.createdAt,
             updatedAt: chat.updatedAt
         };
 
-        res.status(200).json(formattedChat);
+        res.status(200).json({
+            success: true,
+            chat: transformedChat
+        });
     } catch (error) {
-        console.error('Error creating/getting chat:', error);
-        res.status(500).json({ message: 'Failed to create/get chat', error: error.message });
+        console.error('Error creating/fetching chat:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
     }
 };
 
 // Get messages for a specific chat
 export const getChatMessages = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { chatId } = req.params;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
@@ -117,10 +112,21 @@ export const getChatMessages = async (req, res) => {
             chat: chatId,
             isDeleted: false
         })
-        .populate('sender', 'firstName lastName profilePicture')
+        .populate('sender', 'firstName lastName userName profileImage')
         .sort({ createdAt: -1 })
         .limit(limit)
         .skip(skip);
+
+        console.log('Messages found:', messages.length);
+        if (messages.length > 0) {
+            console.log('Sample message sender:', JSON.stringify({
+                _id: messages[0].sender._id,
+                firstName: messages[0].sender.firstName,
+                lastName: messages[0].sender.lastName,
+                userName: messages[0].sender.userName,
+                profileImage: messages[0].sender.profileImage
+            }, null, 2));
+        }
 
         // Mark messages as read
         await Message.updateMany(
@@ -156,7 +162,7 @@ export const getChatMessages = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { chatId, content, messageType = 'text' } = req.body;
 
         if (!chatId || !content) {
@@ -194,7 +200,7 @@ export const sendMessage = async (req, res) => {
 
         // Populate message for response
         const populatedMessage = await Message.findById(message._id)
-            .populate('sender', 'firstName lastName profilePicture');
+            .populate('sender', 'name profileImage');
 
         // Emit message to all participants via Socket.IO
         const otherParticipants = chat.participants.filter(p => p.toString() !== userId);
@@ -228,7 +234,7 @@ export const sendMessage = async (req, res) => {
 // Delete a message
 export const deleteMessage = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { messageId } = req.params;
 
         const message = await Message.findOne({

@@ -193,7 +193,7 @@ return res.status(400).json({message:"query is required"})
                 {userName:{$regex:query,$options:"i"}},
                 {skills:{$in:[query]}}
             ]
-        })
+        }).select("-password")
 
         return res.status(200).json(users)
     } catch (error) {

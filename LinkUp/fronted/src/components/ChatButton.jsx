@@ -9,16 +9,18 @@ const ChatButton = ({ userId, userName, className = "" }) => {
 
     const startChat = async () => {
         try {
+            console.log('Starting chat with:', { userId, userName, serverUrl });
             const response = await axios.post(`${serverUrl}/api/chat/create`, {
                 participantId: userId
             }, {
                 withCredentials: true
             });
-
+            
+            console.log('Chat created successfully:', response.data);
             // Navigate to chat page with the chat selected
             navigate('/chat', { state: { selectedChat: response.data } });
         } catch (error) {
-            console.error('Error creating chat:', error);
+            console.error('Error creating chat:', error.response?.data || error.message);
             // Still navigate to chat page even if error
             navigate('/chat');
         }

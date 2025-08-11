@@ -5,12 +5,13 @@ import { TiHome } from "react-icons/ti";
 import { FaUserGroup } from "react-icons/fa6";
 import { IoNotificationsSharp } from "react-icons/io5";
 import { FaRegBookmark } from "react-icons/fa";
-import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
+import { IoChatbubbleEllipses } from "react-icons/io5";
 import dp from "../assets/dp.webp"
 import { userDataContext } from '../context/UserContext';
 import { authDataContext } from '../context/AuthContext';
 import axios from 'axios';
 import { Navigate, useNavigate } from 'react-router-dom';
+import ChatButton from './ChatButton';
 function Nav() {
     let [activeSearch,setActiveSearch]=useState(false)
     let {userData,setUserData,handleGetProfile,notificationCount}=useContext(userDataContext)
@@ -60,16 +61,23 @@ useEffect(()=>{
         <img src={logo2}alt="" className='w-[50px]'/>
       </div>
       {!activeSearch && <div><IoSearchSharp className='w-[23px] h-[23px] text-gray-600 lg:hidden' onClick={()=>setActiveSearch(true)}/></div>}
-      {searchData.length>0 &&   <div className='absolute top-[90px] h-[500px] left-[0px] lg:left-[20px] shadow-lg w-[100%] lg:w-[700px] bg-white flex flex-col gap-[20px] p-[20px] overflow-auto'>
+      {searchData.length>0 &&   <div className='absolute top-[90px] h-[500px] left-[0px] lg:left-[20px] shadow-lg w-[100%] lg:w-[700px] bg-white flex flex-col gap-[20px] p-[20px] overflow-auto z-50'>
          {searchData.map((sea)=>(
-          <div key={sea._id} className='flex gap-[20px] items-center border-b-2 border-b-gray-300 p-[10px] hover:bg-gray-200 cursor-pointer rounded-lg ' onClick={()=>handleGetProfile(sea.userName)}>
-         <div className='w-[70px] h-[70px] rounded-full overflow-hidden'>
-            <img src={sea.profileImage || dp} alt="" className='w-full h-full'/>
-        </div>
-        <div>
-        <div className='text-[19px] font-semibold text-gray-700'>{`${sea.firstName} ${sea.lastName}`}</div>
-        <div className='text-[15px] font-semibold text-gray-700'>{sea.headline}</div>
-        </div>
+          <div key={sea._id} className='flex gap-[20px] items-center justify-between border-b-2 border-b-gray-300 p-[10px] hover:bg-gray-200 rounded-lg'>
+            <div className='flex gap-[20px] items-center cursor-pointer' onClick={()=>handleGetProfile(sea.userName)}>
+              <div className='w-[70px] h-[70px] rounded-full overflow-hidden'>
+                  <img src={sea.profileImage || dp} alt="" className='w-full h-full'/>
+              </div>
+              <div>
+              <div className='text-[19px] font-semibold text-gray-700'>{`${sea.firstName} ${sea.lastName}`}</div>
+              <div className='text-[15px] font-semibold text-gray-700'>{sea.headline}</div>
+              </div>
+            </div>
+            <ChatButton 
+              userId={sea._id} 
+              userName={`${sea.firstName} ${sea.lastName}`}
+              className="px-3 py-1 text-sm bg-[#0073b1] text-white rounded hover:bg-[#005885]"
+            />
           </div>
          ))}
 
@@ -100,7 +108,7 @@ useEffect(()=>{
         <div>Saved Posts</div>
         </div>
         <div className='flex  w-full items-center justify-start text-gray-600 gap-[10px] cursor-pointer' onClick={()=>{navigate("/chat"); setShowPopup(false)}}>
-        <IoChatbubbleEllipsesOutline className='w-[23px] h-[23px] text-gray-600 '/>
+        <IoChatbubbleEllipses className='w-[23px] h-[23px] text-gray-600 '/>
         <div>Messages</div>
         </div>
         <button className='w-[100%] h-[40px] rounded-full border-2 border-[#ec4545] text-[#ec4545]' onClick={handleSignOut}>Sign Out</button>
@@ -118,7 +126,7 @@ useEffect(()=>{
         <div>My Networks</div>
         </div>
         <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer' onClick={()=>navigate("/chat")}>
-        <IoChatbubbleEllipsesOutline className='w-[23px] h-[23px] text-gray-600'/>
+        <IoChatbubbleEllipses className='w-[23px] h-[23px] text-gray-600'/>
         <div className='hidden md:block'>Messages</div>
         </div>
         <div className='flex flex-col items-center justify-center text-gray-600 cursor-pointer relative' onClick={()=>navigate("/notification")}>

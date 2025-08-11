@@ -82,12 +82,27 @@ export const userSocketMap = new Map();
 io.on("connection",(socket) =>{
     console.log("user connected ",socket.id)
     
-    socket.on("register",(userId)=>{
+    socket.on("register", async (userId)=>{
         userSocketMap.set(userId,socket.id);
         console.log(`User ${userId} registered with socket ${socket.id}`)
         
         // Join user to their personal room for direct messaging
         socket.join(userId);
+        
+        // Update user online status in database
+        try {
+            const User = (await import('./models/user.model.js')).default;
+            await User.findByIdAndUpdate(userId, { 
+                isOnline: true, 
+                lastSeen: new Date() 
+            });
+            
+            // Broadcast online status to all connected users
+            socket.broadcast.emit("userOnline", userId);
+            console.log(`User ${userId} is now online`);
+        } catch (error) {
+            console.error("Error updating online status:", error);
+        }
     })
     
     // Handle joining chat rooms

@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import Notification from './pages/notification';
 import SavedPosts from './pages/SavedPosts';
 import Chat from './pages/Chat';
+import Friends from './pages/Friends';
 
 function App() {
   let { userData }=useContext(userDataContext)
@@ -28,6 +29,7 @@ function App() {
       <Route path='/notification' element={userData?<Notification/>:<Navigate to="/login"/>}/>
     <Route path='/saved-posts' element={userData?<SavedPosts/>:<Navigate to="/login"/>}/>
     <Route path='/chat' element={userData?<Chat/>:<Navigate to="/login"/>}/>
+    <Route path='/friends' element={userData?<Friends/>:<Navigate to="/login"/>}/>
 
    </Routes>
   )

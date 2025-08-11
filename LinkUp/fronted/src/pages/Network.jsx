@@ -6,6 +6,7 @@ import axios from 'axios';
 import dp from "../assets/dp.webp";
 import { FaRegCheckCircle } from "react-icons/fa";
 import { RxCrossCircled } from "react-icons/rx";
+import ChatButton from '../components/ChatButton';
 function Network() {
     let { serverUrl } = useContext(authDataContext);
     let [connection, setConnection] = useState([]);
@@ -73,7 +74,12 @@ function Network() {
                                 </div>
                                 <div className="text-[19px] font-semibold text-gray-700">{`${connection.sender.firstName} ${connection.sender.lastName}`}</div>
                             </div>
-                            <div className='flex gap-2'>
+                            <div className='flex gap-2 items-center'>
+                                <ChatButton 
+                                    userId={connection.sender._id} 
+                                    userName={`${connection.sender.firstName} ${connection.sender.lastName}`}
+                                    className="text-sm px-3 py-1"
+                                />
                                 <button className='text-[#18c5ff] font-semibold' onClick={()=>handleAcceptConnection(connection._id)}><FaRegCheckCircle className='w-[40px] h-[40px] ' /></button>
                                 <button className='text-[#ff4d4f] font-semibold' onClick={()=>handleRejectConnection(connection._id)}><RxCrossCircled className='w-[40px] h-[40px]' /></button>
                             </div>

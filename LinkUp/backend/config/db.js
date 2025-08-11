@@ -19,7 +19,10 @@ const connectDB = async ()=>{
         });
         
     }catch(error){
-        console.log("db error");
+        console.error("❌ Database connection failed:");
+        console.error('Error details:', error.message);
+        console.error('Full error:', error);
+        process.exit(1);
     }
 }
 export default connectDB

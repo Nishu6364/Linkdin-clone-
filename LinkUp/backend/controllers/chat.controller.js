@@ -42,49 +42,121 @@ export const getUserChats = async (req, res) => {
 // Create or get existing chat
 export const createOrGetChat = async (req, res) => {
     try {
-        const { otherUserId } = req.params;
+        const { participantId } = req.body;
         const userId = req.userId;
+        
+        console.log('createOrGetChat called with:', { participantId, userId });
+        
+        if (!participantId) {
+            console.log('Missing participantId');
+            return res.status(400).json({
+                success: false,
+                message: 'participantId is required'
+            });
+        }
+
+        if (participantId === userId) {
+            console.log('User trying to chat with themselves');
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot create chat with yourself'
+            });
+        }
+
+        // Check if both users exist
+        const [currentUser, otherUser] = await Promise.all([
+            User.findById(userId),
+            User.findById(participantId)
+        ]);
+
+        if (!currentUser) {
+            console.log('Current user not found:', userId);
+            return res.status(404).json({
+                success: false,
+                message: 'Current user not found'
+            });
+        }
+
+        if (!otherUser) {
+            console.log('Other user not found:', participantId);
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        console.log('Both users found:', { currentUser: currentUser.userName, otherUser: otherUser.userName });
+
+        console.log('Both users found:', { currentUser: currentUser.userName, otherUser: otherUser.userName });
 
         let chat = await Chat.findOne({
-            participants: { $all: [userId, otherUserId] }
+            participants: { $all: [userId, participantId] }
         }).populate({
             path: 'participants',
-            match: { _id: { $ne: userId } },
-            select: 'name profileImage isOnline lastSeen'
+            select: 'firstName lastName userName profileImage isOnline lastSeen'
         }).populate('lastMessage');
 
+        console.log('Existing chat found:', chat ? 'Yes' : 'No');
+
         if (!chat) {
+            console.log('Creating new chat...');
             chat = new Chat({
-                participants: [userId, otherUserId]
+                participants: [userId, participantId]
             });
             await chat.save();
+            console.log('Chat saved with ID:', chat._id);
             
+            // Populate the participants after saving
             await chat.populate({
                 path: 'participants',
-                match: { _id: { $ne: userId } },
-                select: 'name profileImage isOnline lastSeen'
+                select: 'firstName lastName userName profileImage isOnline lastSeen'
             });
+            console.log('Chat populated with participants');
+        }
+
+        // Get the other participant (not the current user)
+        const otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
+        
+        if (!otherParticipant) {
+            console.log('No other participant found, fetching directly...');
+            const directOtherUser = await User.findById(participantId).select('firstName lastName userName profileImage isOnline lastSeen');
+            if (!directOtherUser) {
+                throw new Error('Other participant not found');
+            }
+            console.log('Direct other user found:', directOtherUser.userName);
         }
 
         // Transform to match frontend expectations
         const transformedChat = {
             _id: chat._id,
-            participant: chat.participants[0],
+            participant: otherParticipant || otherUser,
             lastMessage: chat.lastMessage,
             lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
             createdAt: chat.createdAt,
             updatedAt: chat.updatedAt
         };
 
+        console.log('Transformed chat being returned:', {
+            chatId: transformedChat._id,
+            participantName: transformedChat.participant?.userName || 'unknown',
+            participantId: transformedChat.participant?._id
+        });
+
         res.status(200).json({
             success: true,
             chat: transformedChat
         });
     } catch (error) {
-        console.error('Error creating/fetching chat:', error);
+        console.error('Error creating/fetching chat:', {
+            message: error.message,
+            stack: error.stack,
+            userId: req.userId,
+            participantId: req.body?.participantId
+        });
         res.status(500).json({
             success: false,
-            message: 'Internal server error'
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

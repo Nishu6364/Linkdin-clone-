@@ -233,17 +233,17 @@ const Chat = () => {
                             <div className="flex items-center space-x-3">
                                 <div className="relative">
                                     <img
-                                        src={chat.participant.profileImage || dp}
-                                        alt={chat.participant.name}
+                                        src={chat.participant?.profileImage || dp}
+                                        alt={chat.participant?.name || 'User'}
                                         className="w-10 h-10 rounded-full object-cover"
                                     />
-                                    {(onlineUsers.has(chat.participant._id) || chat.participant.isOnline) && (
+                                    {chat.participant && (onlineUsers.has(chat.participant._id) || chat.participant.isOnline) && (
                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-gray-900 truncate">
-                                        {getDisplayName(chat.participant)}
+                                        {chat.participant ? getDisplayName(chat.participant) : 'Unknown User'}
                                     </p>
                                     {chat.lastMessage && (
                                         <p className="text-sm text-gray-500 truncate">
@@ -270,16 +270,16 @@ const Chat = () => {
                         <div className="p-4 border-b border-gray-300 bg-white">
                             <div className="flex items-center space-x-3">
                                 <img
-                                    src={selectedChat.participant.profileImage || dp}
-                                    alt={selectedChat.participant.name}
+                                    src={selectedChat.participant?.profileImage || dp}
+                                    alt={selectedChat.participant?.name || 'User'}
                                     className="w-10 h-10 rounded-full object-cover"
                                 />
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900">
-                                        {selectedChat.participant.name}
+                                        {selectedChat.participant?.name || getDisplayName(selectedChat.participant) || 'Unknown User'}
                                     </h3>
                                     <p className="text-sm text-gray-500">
-                                        {(onlineUsers.has(selectedChat.participant._id) || selectedChat.participant.isOnline) ? 'Online' : 'Offline'}
+                                        {selectedChat.participant && (onlineUsers.has(selectedChat.participant._id) || selectedChat.participant.isOnline) ? 'Online' : 'Offline'}
                                     </p>
                                 </div>
                             </div>

@@ -221,3 +221,28 @@ export const getSuggestedUser=async (req,res)=>{
         return res.status(500).json({message:`suggestedUser error ${error}`})
     }
 }
+
+// Get all users for messaging - no restrictions
+export const getAllUsers = async (req, res) => {
+    try {
+        const currentUserId = req.userId;
+        
+        // Get all users except the current user
+        const allUsers = await User.find({
+            _id: { $ne: currentUserId }
+        }).select("firstName lastName userName profileImage headline location isOnline lastSeen").limit(50);
+
+        return res.status(200).json({
+            success: true,
+            users: allUsers,
+            message: "All users retrieved successfully"
+        });
+
+    } catch (error) {
+        console.error("Error fetching all users:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching users"
+        });
+    }
+}

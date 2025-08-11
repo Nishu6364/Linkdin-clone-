@@ -1,5 +1,5 @@
 import express from "express"
-import { getCurrentUser, getprofile, getSuggestedUser, search, updateProfile } from "../controllers/user.controller.js"
+import { getCurrentUser, getprofile, getSuggestedUser, search, updateProfile, getAllUsers } from "../controllers/user.controller.js"
 import isAuth from "../middlewares/isAuth.js"
 import upload from "../middlewares/multer.js"
 
@@ -24,4 +24,5 @@ userRouter.put("/updateprofile",isAuth,(req, res, next) => {
 userRouter.get("/profile/:userName",isAuth,getprofile)
 userRouter.get("/search",isAuth,search)
 userRouter.get("/suggestedusers",isAuth,getSuggestedUser)
+userRouter.get("/allusers",isAuth,getAllUsers)
 export default userRouter

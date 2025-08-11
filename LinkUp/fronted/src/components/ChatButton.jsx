@@ -18,7 +18,7 @@ const ChatButton = ({ userId, userName, className = "" }) => {
             
             console.log('Chat created successfully:', response.data);
             // Navigate to chat page with the chat selected
-            navigate('/chat', { state: { selectedChat: response.data } });
+            navigate('/chat', { state: { selectedChat: response.data.chat } });
         } catch (error) {
             console.error('Error creating chat:', error.response?.data || error.message);
             // Still navigate to chat page even if error

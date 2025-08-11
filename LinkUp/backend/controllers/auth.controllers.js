@@ -101,10 +101,15 @@ export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         
-        console.log('Forgot password request for:', email);
+        console.log('🔧 FORGOT PASSWORD DEBUG:');
+        console.log('- Request for email:', email);
+        console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
+        console.log('- EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
+        console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'NOT SET');
+        console.log('- FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
         
         if (!email) {
-            console.log('No email provided in request');
+            console.log('❌ No email provided in request');
             return res.status(400).json({ message: "Email is required" });
         }
 

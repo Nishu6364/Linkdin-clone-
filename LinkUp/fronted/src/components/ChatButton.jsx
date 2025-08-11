@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authDataContext } from '../context/AuthContext';
 import axios from 'axios';
 
 const ChatButton = ({ userId, userName, className = "" }) => {
     const navigate = useNavigate();
+    const { serverUrl } = useContext(authDataContext);
 
     const startChat = async () => {
         try {
-            const response = await axios.post('/api/chat/create', {
+            const response = await axios.post(`${serverUrl}/api/chat/create`, {
                 participantId: userId
             }, {
                 withCredentials: true

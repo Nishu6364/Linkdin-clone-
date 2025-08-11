@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { userDataContext } from '../context/UserContext';
+import { authDataContext } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
 import Nav from '../components/Nav';
 
 const Chat = () => {
-    const { user } = useAuth();
+    const { userData: user } = useContext(userDataContext);
+    const { serverUrl } = useContext(authDataContext);
     const location = useLocation();
     const [socket, setSocket] = useState(null);
     const [chats, setChats] = useState([]);
@@ -21,8 +23,8 @@ const Chat = () => {
 
     // Initialize socket connection
     useEffect(() => {
-        if (user) {
-            const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000', {
+        if (user && serverUrl) {
+            const newSocket = io(serverUrl, {
                 withCredentials: true
             });
 
@@ -77,7 +79,7 @@ const Chat = () => {
                 newSocket.disconnect();
             };
         }
-    }, [user, selectedChat]);
+    }, [user, serverUrl, selectedChat]);
 
     // Fetch user chats
     useEffect(() => {
@@ -101,7 +103,7 @@ const Chat = () => {
 
     const fetchChats = async () => {
         try {
-            const response = await axios.get('/api/chat', {
+            const response = await axios.get(`${serverUrl}/api/chat`, {
                 withCredentials: true
             });
             setChats(response.data);
@@ -112,7 +114,7 @@ const Chat = () => {
 
     const fetchMessages = async (chatId) => {
         try {
-            const response = await axios.get(`/api/chat/${chatId}/messages`, {
+            const response = await axios.get(`${serverUrl}/api/chat/${chatId}/messages`, {
                 withCredentials: true
             });
             setMessages(response.data.messages);
@@ -125,7 +127,7 @@ const Chat = () => {
         if (!newMessage.trim() || !selectedChat) return;
 
         try {
-            await axios.post('/api/chat/message', {
+            await axios.post(`${serverUrl}/api/chat/message`, {
                 chatId: selectedChat._id,
                 content: newMessage
             }, {

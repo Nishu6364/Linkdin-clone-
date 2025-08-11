@@ -6,7 +6,7 @@ import {
     sendMessage, 
     deleteMessage 
 } from '../controllers/chat.controller.js';
-import { isAuth } from '../middlewares/isAuth.js';
+import isAuth from '../middlewares/isAuth.js';
 
 const chatRouter = express.Router();
 

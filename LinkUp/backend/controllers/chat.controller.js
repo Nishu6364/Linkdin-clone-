@@ -45,13 +45,21 @@ export const createOrGetChat = async (req, res) => {
         const { participantId } = req.body;
         const userId = req.userId;
         
-        console.log('createOrGetChat called with:', { participantId, userId });
+        console.log('createOrGetChat called with:', { participantId, userId, body: req.body });
         
         if (!participantId) {
             console.log('Missing participantId');
             return res.status(400).json({
                 success: false,
                 message: 'participantId is required'
+            });
+        }
+
+        if (!userId) {
+            console.log('Missing userId from auth middleware');
+            return res.status(401).json({
+                success: false,
+                message: 'User not authenticated'
             });
         }
 
@@ -87,8 +95,7 @@ export const createOrGetChat = async (req, res) => {
 
         console.log('Both users found:', { currentUser: currentUser.userName, otherUser: otherUser.userName });
 
-        console.log('Both users found:', { currentUser: currentUser.userName, otherUser: otherUser.userName });
-
+        // Check if chat already exists
         let chat = await Chat.findOne({
             participants: { $all: [userId, participantId] }
         }).populate({
@@ -100,36 +107,43 @@ export const createOrGetChat = async (req, res) => {
 
         if (!chat) {
             console.log('Creating new chat...');
-            chat = new Chat({
-                participants: [userId, participantId]
-            });
-            await chat.save();
-            console.log('Chat saved with ID:', chat._id);
             
-            // Populate the participants after saving
+            // Sort participants to ensure consistent ordering
+            const sortedParticipants = [userId, participantId].sort();
+            
+            // Create new chat
+            chat = new Chat({
+                participants: sortedParticipants,
+                lastMessageTime: new Date()
+            });
+            
+            await chat.save();
+            
+            // Populate the participants after creation
             await chat.populate({
                 path: 'participants',
                 select: 'firstName lastName userName profileImage isOnline lastSeen'
             });
-            console.log('Chat populated with participants');
+            
+            console.log('Chat created with ID:', chat._id);
         }
 
         // Get the other participant (not the current user)
-        const otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
+        let otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
         
         if (!otherParticipant) {
             console.log('No other participant found, fetching directly...');
-            const directOtherUser = await User.findById(participantId).select('firstName lastName userName profileImage isOnline lastSeen');
-            if (!directOtherUser) {
+            otherParticipant = await User.findById(participantId).select('firstName lastName userName profileImage isOnline lastSeen');
+            if (!otherParticipant) {
                 throw new Error('Other participant not found');
             }
-            console.log('Direct other user found:', directOtherUser.userName);
+            console.log('Direct other user found:', otherParticipant.userName);
         }
 
         // Transform to match frontend expectations
         const transformedChat = {
             _id: chat._id,
-            participant: otherParticipant || otherUser,
+            participant: otherParticipant,
             lastMessage: chat.lastMessage,
             lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
             createdAt: chat.createdAt,
@@ -151,12 +165,18 @@ export const createOrGetChat = async (req, res) => {
             message: error.message,
             stack: error.stack,
             userId: req.userId,
-            participantId: req.body?.participantId
+            participantId: req.body?.participantId,
+            errorName: error.name,
+            errorCode: error.code
         });
         res.status(500).json({
             success: false,
             message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'development' ? {
+                message: error.message,
+                name: error.name,
+                code: error.code
+            } : undefined
         });
     }
 };
@@ -272,7 +292,7 @@ export const sendMessage = async (req, res) => {
 
         // Populate message for response
         const populatedMessage = await Message.findById(message._id)
-            .populate('sender', 'name profileImage');
+            .populate('sender', 'firstName lastName userName profileImage');
 
         // Emit message to all participants via Socket.IO
         const otherParticipants = chat.participants.filter(p => p.toString() !== userId);

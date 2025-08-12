@@ -23,6 +23,6 @@ const chatSchema = new mongoose.Schema({
 });
 
 // Ensure a chat between two users is unique
-chatSchema.index({ participants: 1 }, { unique: true });
+// chatSchema.index({ participants: 1 }, { unique: true });
 
 export default mongoose.model('Chat', chatSchema);

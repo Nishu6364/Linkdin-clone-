@@ -14,6 +14,7 @@ import Notification from './pages/notification';
 import SavedPosts from './pages/SavedPosts';
 import Chat from './pages/Chat';
 import Friends from './pages/Friends';
+import Jobs from './pages/Jobs';
 
 function App() {
   let { userData }=useContext(userDataContext)
@@ -24,12 +25,13 @@ function App() {
     <Route path='/login' element={userData?<Navigate to="/"/>:<Login/>}/>
     <Route path='/forgot-password' element={userData?<Navigate to="/"/>:<ForgotPassword/>}/>
     <Route path='/reset-password' element={userData?<Navigate to="/"/>:<ResetPassword/>}/>
-    <Route path ='/Network' element={userData?<Network/>:<Navigate to="/login"/>}/>
-    <Route path ='/Profile' element={userData?<Profile/>:<Navigate to="/login"/>}/>
+    <Route path ='/network' element={userData?<Network/>:<Navigate to="/login"/>}/>
+    <Route path ='/profile' element={userData?<Profile/>:<Navigate to="/login"/>}/>
       <Route path='/notification' element={userData?<Notification/>:<Navigate to="/login"/>}/>
     <Route path='/saved-posts' element={userData?<SavedPosts/>:<Navigate to="/login"/>}/>
     <Route path='/chat' element={userData?<Chat/>:<Navigate to="/login"/>}/>
     <Route path='/friends' element={userData?<Friends/>:<Navigate to="/login"/>}/>
+    <Route path='/jobs' element={userData?<Jobs/>:<Navigate to="/login"/>}/>
 
    </Routes>
   )

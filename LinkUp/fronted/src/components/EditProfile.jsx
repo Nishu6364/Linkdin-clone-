@@ -6,6 +6,7 @@ import { FiPlus } from "react-icons/fi";
 import dp from "../assets/dp.webp"
 import { authDataContext } from '../context/AuthContext';
 import axios from "axios";
+import ImageCropModal from './ImageCropModal';
 
 
 
@@ -39,6 +40,13 @@ let [backendProfileImage,setBackendProfileImage]=useState(null)
 let [frontendCoverImage,setFrontendCoverImage]=useState(userData.coverImage || null)
 let [backendCoverImage,setBackendCoverImage]=useState(null)
 let [saving,setSaving]=useState(false)
+
+// Image cropper states
+let [showProfileCropper, setShowProfileCropper] = useState(false)
+let [showCoverCropper, setShowCoverCropper] = useState(false)
+let [tempProfileImage, setTempProfileImage] = useState(null)
+let [tempCoverImage, setTempCoverImage] = useState(null)
+
 const profileImage=useRef()
 const coverImage=useRef(null)
 
@@ -101,15 +109,52 @@ function addEducation(e){
 
     function handleProfileImage(e){
      let file=e.target.files[0]
-     setBackendProfileImage(file)
-     setFrontendProfileImage(URL.createObjectURL(file))
+     if (file) {
+       setTempProfileImage(URL.createObjectURL(file))
+       setShowProfileCropper(true)
+     }
     }
+    
     function handleCoverImage(e) {
       let file = e.target.files[0];
       if (file) {
-        setBackendCoverImage(file); // Set the file for backend upload
-        setFrontendCoverImage(URL.createObjectURL(file)); // Create a preview URL for the frontend
+        setTempCoverImage(URL.createObjectURL(file))
+        setShowCoverCropper(true)
       }
+    }
+
+    // Handle cropped profile image
+    function handleProfileCropComplete(croppedImageUrl) {
+      // Use the actual cropped image
+      setFrontendProfileImage(croppedImageUrl)
+      
+      // Convert cropped image to file for backend upload
+      fetch(croppedImageUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' })
+          setBackendProfileImage(file)
+        })
+      
+      setShowProfileCropper(false)
+      setTempProfileImage(null)
+    }
+
+    // Handle cropped cover image
+    function handleCoverCropComplete(croppedImageUrl) {
+      // Use the actual cropped image
+      setFrontendCoverImage(croppedImageUrl)
+      
+      // Convert cropped image to file for backend upload
+      fetch(croppedImageUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' })
+          setBackendCoverImage(file)
+        })
+      
+      setShowCoverCropper(false)
+      setTempCoverImage(null)
     }
 const handleSaveProfile=async ()=>{
   setSaving(true)
@@ -158,7 +203,7 @@ const handleSaveProfile=async ()=>{
 
 
   return (
-    <div className="w-full h-[100vh] fixed top-0  z-[100] flex justify-center items-center">
+    <div className="w-full h-[100vh] fixed top-0 left-0 bg-black bg-opacity-50 z-[100] flex justify-center items-center">
     <input type="file" accept='image/*' hidden ref={profileImage} onChange={handleProfileImage}/>
     <input type="file" accept='image/*' hidden ref={coverImage} onChange={handleCoverImage}/>
 
@@ -249,6 +294,31 @@ const handleSaveProfile=async ()=>{
         </div>
         
       </div>
+
+      {/* Image Croppers */}
+      <ImageCropModal
+        isOpen={showProfileCropper}
+        onClose={() => {
+          setShowProfileCropper(false)
+          setTempProfileImage(null)
+        }}
+        imageUrl={tempProfileImage}
+        aspectRatio={1}
+        onCropComplete={handleProfileCropComplete}
+        title="Profile Image"
+      />
+
+      <ImageCropModal
+        isOpen={showCoverCropper}
+        onClose={() => {
+          setShowCoverCropper(false)
+          setTempCoverImage(null)
+        }}
+        imageUrl={tempCoverImage}
+        aspectRatio={16/9}
+        onCropComplete={handleCoverCropComplete}
+        title="Cover Image"
+      />
     </div>
   );
 }

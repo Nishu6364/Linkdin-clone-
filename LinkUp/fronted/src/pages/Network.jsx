@@ -7,6 +7,7 @@ import dp from "../assets/dp.webp";
 import { FaRegCheckCircle } from "react-icons/fa";
 import { RxCrossCircled } from "react-icons/rx";
 import ChatButton from '../components/ChatButton';
+import MobileBottomNav from '../components/MobileBottomNav';
 function Network() {
     let { serverUrl } = useContext(authDataContext);
     let [connection, setConnection] = useState([]);
@@ -50,8 +51,9 @@ function Network() {
     }, []);
 
     return (
-        <div className="w-screen  h-[100vh] bg-bg-[#f0efe7] pt-[100px] px-[20px] flex flex-col   gap-[40px] item-center  ">
+        <div className="w-screen h-[100vh] bg-bg-[#f0efe7] pt-[100px] pb-16 md:pb-0 px-[20px] flex flex-col gap-[40px] item-center">
             <Nav />
+            <MobileBottomNav />
             <div className='w-full h-[100px] bg-[white] shadow-lg rounded-lg flex  p-[10px] text-[22px] text-gray-600'>
                 Invitations {connection.length}
             </div>

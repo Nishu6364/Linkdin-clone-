@@ -20,6 +20,7 @@ let [edit,setEdit]=useState(false)
 let [profileData,setProfileData]=useState([])
 let [notificationCount,setNotificationCount]=useState(0)
 let [savedPostsData, setSavedPostsData] = useState([])
+let [uploadPost,setUploadPost]=useState(false)
  let navigate=useNavigate()
 const getCurrentUser=async ()=>{
     try {
@@ -156,7 +157,7 @@ useEffect(() => {
 
 
     const value={
-        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount,logout,savedPostsData,setSavedPostsData,getSavedPosts
+        userData,setUserData,edit,setEdit,postData,setPostData,getPost,handleGetProfile,profileData,setProfileData,notificationCount,setNotificationCount,getNotificationCount,logout,savedPostsData,setSavedPostsData,getSavedPosts,uploadPost,setUploadPost
     }
   return (
     <div>

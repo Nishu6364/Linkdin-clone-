@@ -129,6 +129,7 @@ function AllUsers() {
                                     />
                                     <ConnectionButton 
                                         userId={user._id}
+                                        userName={`${user.firstName} ${user.lastName}`}
                                         className="w-full py-[6px] text-[12px]"
                                     />
                                 </div>

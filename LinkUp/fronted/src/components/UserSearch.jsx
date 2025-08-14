@@ -110,7 +110,10 @@ const UserSearch = () => {
                                                 userName={`${user.firstName} ${user.lastName}`}
                                                 className="px-4 py-2 bg-[#0073b1] text-white rounded-md text-sm hover:bg-[#005885]"
                                             />
-                                            <ConnectionButton userId={user._id} />
+                                            <ConnectionButton 
+                                                userId={user._id}
+                                                userName={`${user.firstName} ${user.lastName}`}
+                                            />
                                         </div>
                                     </div>
                                 </div>

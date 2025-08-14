@@ -51,7 +51,10 @@ setProfilePost(postData.filter((post)=>post.author._id==profileData._id))
                          userName={`${profileData.firstName} ${profileData.lastName}`}
                          className="min-w-[120px] h-[40px] rounded-full bg-[#0073b1] text-white font-semibold hover:bg-[#005885] transition-colors"
                        />
-                       <ConnectionButton userId={profileData._id}/>
+                       <ConnectionButton 
+                         userId={profileData._id}
+                         userName={`${profileData.firstName} ${profileData.lastName}`}
+                       />
                      </div> 
                    }
                   

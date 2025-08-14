@@ -4,8 +4,9 @@ import axios from 'axios';
 import { userDataContext, socket } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import WithdrawModal from './WithdrawModal';
-import { HiOutlineUserPlus, HiOutlineClock, HiOutlineArrowUturnLeft, HiOutlineUserMinus } from "react-icons/hi2";
-function ConnectionButton({ userId, userName }) {
+import { HiOutlineUserPlus, HiOutlineClock, HiOutlineArrowUturnLeft } from "react-icons/hi2";
+
+function PostConnectionButton({ userId, userName }) {
     let { serverUrl } = useContext(authDataContext);
     let {userData,setUserData} = useContext(userDataContext);
     let [status, setStatus] = useState("");
@@ -20,7 +21,6 @@ function ConnectionButton({ userId, userName }) {
         } catch (error) {
             console.error("Error connecting:", error);
         }
-
     } 
 
     const handleRemoveConnection = async () => {
@@ -33,20 +33,18 @@ function ConnectionButton({ userId, userName }) {
         }
     }
 
-const handleGetStatus = async () => {
-    try {
-        let result = await axios.get(
-            `${serverUrl}/api/connection/getstatus/${userId}`,
-            { withCredentials: true } // ✅ correct position
-        );
-        console.log("Connection status:", result.data);
-        setStatus(result.data.status);
-    } catch (error) {
-        console.error("Error getting connection status:", error);
-    }
-};
-
-
+    const handleGetStatus = async () => {
+        try {
+            let result = await axios.get(
+                `${serverUrl}/api/connection/getstatus/${userId}`,
+                { withCredentials: true } // ✅ correct position
+            );
+            console.log("Connection status:", result.data);
+            setStatus(result.data.status);
+        } catch (error) {
+            console.error("Error getting connection status:", error);
+        }
+    };
 
     useEffect(() => {
         handleGetStatus();
@@ -63,10 +61,7 @@ const handleGetStatus = async () => {
     }, [userId]);
 
     const handleClick=async () => {
-        if (status === "disconnect") {
-            await handleRemoveConnection(); // Remove existing connection
-        }
-        else if (status === "pending") {
+        if (status === "pending") {
             setShowWithdrawModal(true); // Show withdraw confirmation modal
         }
         else if (status === "received") {
@@ -87,7 +82,6 @@ const handleGetStatus = async () => {
             case "Connect": return "Connect";
             case "pending": return "Pending";
             case "received": return "Respond";
-            case "disconnect": return "Disconnect";
             default: return "Connect";
         }
     }
@@ -97,34 +91,38 @@ const handleGetStatus = async () => {
             case "Connect": return <HiOutlineUserPlus className="w-4 h-4" />;
             case "pending": return <HiOutlineClock className="w-4 h-4" />;
             case "received": return <HiOutlineArrowUturnLeft className="w-4 h-4" />;
-            case "disconnect": return <HiOutlineUserMinus className="w-4 h-4" />;
             default: return <HiOutlineUserPlus className="w-4 h-4" />;
         }
     }
 
-  return (
-   <div>
-    <button 
-        className={`min-w-[100px] h-[40px] rounded-full border-2 border-[#2dc0ff] text-[#2dc0ff] hover:bg-[#2dc0ff] hover:text-white transition-colors flex items-center justify-center gap-2 px-4 ${
-            status === "received" ? "bg-blue-50" : ""
-        } ${
-            status === "pending" ? "bg-gray-100 border-gray-400 text-gray-600 hover:bg-gray-200 hover:text-gray-700" : ""
-        } ${
-            status === "disconnect" ? "border-red-500 text-red-500 hover:bg-red-500 hover:text-white" : ""
-        }`} 
-        onClick={handleClick}
-    >
-        {getButtonIcon()}
-        <span className="text-sm font-medium">{getButtonText()}</span>
-    </button>
+    // Only show button for Connect, Pending, and Received states
+    // Hide for "disconnect" (already connected users)
+    if (status === "disconnect" || status === "") {
+        return null;
+    }
 
-    <WithdrawModal 
-        isOpen={showWithdrawModal}
-        onClose={() => setShowWithdrawModal(false)}
-        onConfirm={handleWithdrawConfirm}
-        userName={userName}
-    />
-   </div>
-  );
+    return (
+        <div>
+            <button 
+                className={`min-w-[100px] h-[40px] rounded-full border-2 border-[#2dc0ff] text-[#2dc0ff] hover:bg-[#2dc0ff] hover:text-white transition-colors flex items-center justify-center gap-2 px-4 ${
+                    status === "received" ? "bg-blue-50" : ""
+                } ${
+                    status === "pending" ? "bg-gray-100 border-gray-400 text-gray-600 hover:bg-gray-200 hover:text-gray-700" : ""
+                }`} 
+                onClick={handleClick}
+            >
+                {getButtonIcon()}
+                <span className="text-sm font-medium">{getButtonText()}</span>
+            </button>
+
+            <WithdrawModal 
+                isOpen={showWithdrawModal}
+                onClose={() => setShowWithdrawModal(false)}
+                onConfirm={handleWithdrawConfirm}
+                userName={userName}
+            />
+        </div>
+    );
 }
-export default ConnectionButton;
+
+export default PostConnectionButton;

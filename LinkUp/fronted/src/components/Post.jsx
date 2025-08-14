@@ -13,7 +13,7 @@ import { MdDelete, MdEdit, MdSave, MdLink, MdCode, MdLock, MdPublic } from "reac
 import { FaRegBookmark, FaBookmark } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 
-import ConnectionButton from './ConnectionButton';
+import PostConnectionButton from './PostConnectionButton';
 
 
 function Post({ id, author, like, comment, description, image,createdAt }) {
@@ -277,7 +277,13 @@ socket.off("postUpdated")
                 </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-[10px]">
-              {userData?._id !== author?._id && author?._id && <ConnectionButton userId={author._id}/>}
+              {/* Post-specific connection button - only shows Connect/Pending/Respond */}
+              {userData?._id !== author?._id && author?._id && (
+                <PostConnectionButton 
+                  userId={author._id}
+                  userName={`${author.firstName} ${author.lastName}`}
+                />
+              )}
               
               {/* Universal three-dot menu for all users */}
               <div className="relative options-menu">

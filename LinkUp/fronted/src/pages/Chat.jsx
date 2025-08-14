@@ -22,6 +22,14 @@ const Chat = () => {
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
+    // Prevent body scroll when chat is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     // Initialize socket connection
     useEffect(() => {
         if (user && serverUrl) {
@@ -195,7 +203,12 @@ const Chat = () => {
     };
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ 
+                behavior: "smooth",
+                block: "end"
+            });
+        }
     };
 
     const formatTime = (date) => {
@@ -213,15 +226,15 @@ const Chat = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="h-screen bg-gray-100 overflow-hidden">
             <Nav />
-            <div className="pt-[80px] h-screen flex bg-gray-100">
+            <div className="pt-[80px] h-full flex bg-gray-100">
             {/* Chat List */}
-            <div className="w-1/3 bg-white border-r border-gray-300">
-                <div className="p-4 border-b border-gray-300">
+            <div className="w-1/3 bg-white border-r border-gray-300 flex flex-col">
+                <div className="p-4 border-b border-gray-300 flex-shrink-0">
                     <h2 className="text-xl font-bold text-gray-800">Messages</h2>
                 </div>
-                <div className="overflow-y-auto h-full">
+                <div className="flex-1 overflow-y-auto">
                     {chats.map((chat) => (
                         <div
                             key={chat._id}
@@ -267,7 +280,7 @@ const Chat = () => {
                 {selectedChat ? (
                     <>
                         {/* Chat Header */}
-                        <div className="p-4 border-b border-gray-300 bg-white">
+                        <div className="p-4 border-b border-gray-300 bg-white flex-shrink-0">
                             <div className="flex items-center space-x-3">
                                 <img
                                     src={selectedChat.participant?.profileImage || dp}
@@ -286,7 +299,7 @@ const Chat = () => {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                             {messages.map((message) => (
                                 <div
                                     key={message._id}
@@ -337,7 +350,7 @@ const Chat = () => {
                         </div>
 
                         {/* Message Input */}
-                        <div className="p-4 border-t border-gray-300 bg-white">
+                        <div className="p-4 border-t border-gray-300 bg-white flex-shrink-0">
                             <div className="flex space-x-2">
                                 <input
                                     type="text"

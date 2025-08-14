@@ -182,6 +182,37 @@ export const removeConnection = async (req, res) => {
 		const myId = req.userId;
 		const otherUserId = req.params.userId;
 
+		// First check if there's a pending request to withdraw
+		const pendingRequest = await Connection.findOne({
+			sender: myId,
+			receiver: otherUserId,
+			status: "pending"
+		});
+
+		if (pendingRequest) {
+			// Withdraw the pending request
+			await Connection.findByIdAndDelete(pendingRequest._id);
+			
+			let receiverSocketId = userSocketMap.get(otherUserId.toString());
+			let senderSocketId = userSocketMap.get(myId.toString());
+
+			if (receiverSocketId) {
+				io.to(receiverSocketId).emit("statusUpdate", {
+					updatedUserId: myId,
+					newStatus: "Connect"
+				});
+			}
+			if (senderSocketId) {
+				io.to(senderSocketId).emit("statusUpdate", {
+					updatedUserId: otherUserId,
+					newStatus: "Connect"
+				});
+			}
+
+			return res.json({ message: "Connection request withdrawn successfully" });
+		}
+
+		// If no pending request, remove existing connection
 		await User.findByIdAndUpdate(myId, { $pull: { connection: otherUserId } });
 		await User.findByIdAndUpdate(otherUserId, { $pull: { connection: myId } });
       

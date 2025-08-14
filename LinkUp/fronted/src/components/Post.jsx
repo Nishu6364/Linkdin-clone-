@@ -493,8 +493,10 @@ socket.off("postUpdated")
          </div>
 
          {image && 
-         <div className='w-full flex justify-center bg-gray-50 rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden mx-3 sm:mx-4'>
-           <img src={image} alt="" className='w-full h-auto object-contain cursor-pointer hover:opacity-95 transition-opacity max-h-[400px] sm:max-h-[600px]'/>
+         <div className="px-3 sm:px-4">
+           <div className='w-full flex justify-center bg-gray-50 rounded-lg border border-gray-200 mb-3 sm:mb-4 overflow-hidden'>
+             <img src={image} alt="" className='w-full h-auto object-contain cursor-pointer hover:opacity-95 transition-opacity max-h-[400px] sm:max-h-[600px]'/>
+           </div>
          </div>}
 
 <div className="border-t border-gray-200">

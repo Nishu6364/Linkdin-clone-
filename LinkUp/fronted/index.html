@@ -3,8 +3,52 @@
     <head>
       <meta charset="UTF-8" />
       <link rel="icon" type="image/svg+xml" href="./public/logo2.jpg" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
       <title>LinkUP</title>
+      <style>
+        /* Mobile safe area and keyboard handling */
+        @supports (padding: max(0px)) {
+          .safe-area-inset-bottom {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+          }
+          .pb-safe {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+          }
+        }
+        
+        /* Prevent zoom on input focus for iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+          select,
+          textarea,
+          input[type="text"],
+          input[type="password"],
+          input[type="datetime"],
+          input[type="datetime-local"],
+          input[type="date"],
+          input[type="month"],
+          input[type="time"],
+          input[type="week"],
+          input[type="number"],
+          input[type="email"],
+          input[type="url"],
+          input[type="search"],
+          input[type="tel"],
+          input[type="color"] {
+            font-size: 16px !important;
+          }
+        }
+        
+        /* Mobile viewport handling */
+        html, body {
+          overscroll-behavior: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Keyboard handling */
+        .keyboard-adjust {
+          transition: transform 0.3s ease;
+        }
+      </style>
     </head>
     <body>
       <div id="root"></div>

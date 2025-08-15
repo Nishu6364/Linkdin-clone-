@@ -113,6 +113,41 @@ const Chat = () => {
         };
     }, []);
 
+    // Handle mobile keyboard and viewport adjustments
+    useEffect(() => {
+        const handleResize = () => {
+            // Scroll to bottom when keyboard appears/disappears
+            if (messagesEndRef.current) {
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        };
+
+        const handleKeyboardShow = () => {
+            // Auto scroll to latest message when keyboard shows
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        };
+
+        // Listen for viewport changes (keyboard show/hide)
+        window.addEventListener('resize', handleResize);
+        
+        // Listen for input focus (keyboard show)
+        const inputs = document.querySelectorAll('input[type="text"]');
+        inputs.forEach(input => {
+            input.addEventListener('focus', handleKeyboardShow);
+        });
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            inputs.forEach(input => {
+                input.removeEventListener('focus', handleKeyboardShow);
+            });
+        };
+    }, [selectedChat, messages]);
+
     // Track user activity
     useEffect(() => {
         let activityTimer;
@@ -548,9 +583,9 @@ const Chat = () => {
         const isOnline = onlineUsers.has(otherParticipant?._id);
 
         return (
-            <div className="h-screen bg-white flex flex-col">
-                {/* Chat Header */}
-                <div className="bg-white border-b border-gray-200 px-4 py-3">
+            <div className="h-screen bg-white flex flex-col relative">
+                {/* Chat Header - Fixed at top */}
+                <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <button onClick={goBackToChats} className="p-1">
@@ -603,8 +638,8 @@ const Chat = () => {
                     </div>
                 </div>
 
-                {/* Profile Section */}
-                <div className="bg-white px-4 py-6 border-b border-gray-200 text-center">
+                {/* Profile Section - Collapsible */}
+                <div className="bg-white px-4 py-6 border-b border-gray-200 text-center flex-shrink-0">
                     <img
                         src={otherParticipant?.profilePicture || dp}
                         alt={`${otherParticipant?.firstName} ${otherParticipant?.lastName}`}
@@ -618,8 +653,8 @@ const Chat = () => {
                     </p>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                {/* Messages - Scrollable area */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-safe">
                     {Array.isArray(messages) && messages.map((message, index) => {
                         // Handle both senderId and sender._id (for compatibility after refresh)
                         const actualSenderId = message.senderId || message.sender?._id;
@@ -723,10 +758,10 @@ const Chat = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message Input */}
-                <div className="bg-white border-t border-gray-200 px-4 py-3">
+                {/* Message Input - Fixed at bottom with keyboard support */}
+                <div className="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0 sticky bottom-0 z-10 safe-area-inset-bottom">
                     <div className="flex items-center gap-3">
-                        <button className="p-2">
+                        <button className="p-2 flex-shrink-0">
                             <FaPlus className="w-5 h-5 text-blue-600" />
                         </button>
                         
@@ -740,7 +775,8 @@ const Chat = () => {
                                 }}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Write a message..."
-                                className="w-full px-4 py-2 pr-12 bg-gray-100 rounded-full text-sm border-none outline-none focus:bg-gray-200"
+                                className="w-full px-4 py-2 pr-12 bg-gray-100 rounded-full text-sm border-none outline-none focus:bg-gray-200 focus:ring-2 focus:ring-blue-500"
+                                style={{ fontSize: '16px' }} // Prevents zoom on iOS
                             />
                             {newMessage.trim() && (
                                 <button 
@@ -752,7 +788,7 @@ const Chat = () => {
                             )}
                         </div>
                         
-                        <button className="p-2">
+                        <button className="p-2 flex-shrink-0">
                             <FaMicrophone className="w-5 h-5 text-gray-600" />
                         </button>
                     </div>

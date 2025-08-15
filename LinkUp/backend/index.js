@@ -20,7 +20,7 @@ let app = express();
 let server = http.createServer(app);
 export const io = new Server(server, {
   cors: { 
-    origin: ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    origin: ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST"]
   },
@@ -30,7 +30,7 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowedOrigins = ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:5174", "http://localhost:3000"];
+      const allowedOrigins = ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -94,8 +94,13 @@ io.on("connection",(socket) =>{
             const User = (await import('./models/user.model.js')).default;
             await User.findByIdAndUpdate(userId, { 
                 isOnline: true, 
-                lastSeen: new Date() 
+                lastSeen: new Date(),
+                lastActivity: new Date()
             });
+            
+            // Send current online users to the newly connected user
+            const onlineUserIds = Array.from(userSocketMap.keys());
+            socket.emit("initialOnlineUsers", onlineUserIds);
             
             // Broadcast online status to all connected users
             socket.broadcast.emit("userOnline", userId);
@@ -104,6 +109,19 @@ io.on("connection",(socket) =>{
             console.error("Error updating online status:", error);
         }
     })
+
+    // Handle user activity updates
+    socket.on("userActivity", async (userId) => {
+        try {
+            const User = (await import('./models/user.model.js')).default;
+            await User.findByIdAndUpdate(userId, { 
+                lastActivity: new Date(),
+                isOnline: true
+            });
+        } catch (error) {
+            console.error("Error updating user activity:", error);
+        }
+    });
     
     // Handle joining chat rooms
     socket.on("joinChat", (chatId) => {
@@ -118,8 +136,27 @@ io.on("connection",(socket) =>{
     });
     
     // Handle typing indicators
-    socket.on("typing", ({ chatId, userId, isTyping }) => {
-        socket.to(chatId).emit("userTyping", { userId, isTyping });
+    socket.on("typing", ({ chatId, userId }) => {
+        socket.to(chatId).emit("userTyping", { userId, chatId });
+    });
+    
+    socket.on("stopTyping", ({ chatId, userId }) => {
+        socket.to(chatId).emit("userStoppedTyping", { userId, chatId });
+    });
+    
+    // Handle sending messages
+    socket.on("sendMessage", (messageData) => {
+        console.log("Message received via socket:", messageData);
+        
+        // Emit to all users in the chat except sender
+        if (messageData.chatId) {
+            socket.to(messageData.chatId).emit("receiveMessage", messageData);
+        }
+        
+        // Also emit to individual user rooms for direct messaging
+        if (messageData.recipientId) {
+            socket.to(messageData.recipientId).emit("receiveMessage", messageData);
+        }
     });
     
     // Handle user online status
@@ -159,7 +196,8 @@ io.on("connection",(socket) =>{
                     const User = (await import('./models/user.model.js')).default;
                     await User.findByIdAndUpdate(disconnectedUserId, { 
                         isOnline: false, 
-                        lastSeen: new Date() 
+                        lastSeen: new Date(),
+                        lastActivity: new Date()
                     });
                     
                     // Broadcast offline status

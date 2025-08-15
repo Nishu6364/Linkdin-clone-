@@ -4,8 +4,6 @@ import { authDataContext } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
-import Nav from '../components/Nav';
-import MobileBottomNav from '../components/MobileBottomNav';
 import dp from '../assets/dp.webp';
 import { IoArrowBack, IoSearch, IoEllipsisVertical, IoStar, IoStarOutline } from 'react-icons/io5';
 import { FaPlus, FaMicrophone, FaPaperPlane } from 'react-icons/fa';
@@ -21,7 +19,6 @@ const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [onlineUsers, setOnlineUsers] = useState(new Set());
-    const [userActivityStatus, setUserActivityStatus] = useState(new Map()); // Store user activity details
     const [typingUsers, setTypingUsers] = useState(new Set());
     const [isTyping, setIsTyping] = useState(false);
     const [showChatView, setShowChatView] = useState(false);
@@ -29,81 +26,10 @@ const Chat = () => {
     const [activeFilter, setActiveFilter] = useState('Focused');
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
     const [showChatOptions, setShowChatOptions] = useState(false);
-    const [showDesktopSettings, setShowDesktopSettings] = useState(false);
-    const [showDesktopChatOptions, setShowDesktopChatOptions] = useState(false);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
     const filters = ['Focused', 'Jobs', 'Unread', 'Drafts', 'InMail'];
-
-    // Navigate to search page to find new users to chat with
-    const startNewChat = () => {
-        navigate('/search');
-    };
-
-    // Track user activity and send to server
-    const updateUserActivity = () => {
-        if (socket && user) {
-            socket.emit('userActivity', user._id);
-        }
-    };
-
-    // Get user activity status for LinkedIn-style display
-    const getUserActivityDisplay = (userId) => {
-        const activityData = userActivityStatus.get(userId);
-        const isOnline = onlineUsers.has(userId);
-        
-        if (!activityData) {
-            return isOnline ? 'Online' : 'Offline';
-        }
-
-        // If user is online and was active in last 5 minutes, show as "Online"
-        if (isOnline && activityData.isActivelyOnline) {
-            return 'Online';
-        }
-
-        // Otherwise show time ago
-        const lastSeen = new Date(activityData.lastSeen || activityData.lastActivity);
-        const now = new Date();
-        const diffInMinutes = Math.floor((now - lastSeen) / (1000 * 60));
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        const diffInDays = Math.floor(diffInHours / 24);
-
-        if (diffInMinutes < 1) {
-            return 'Online';
-        } else if (diffInMinutes < 60) {
-            return `${diffInMinutes}m ago`;
-        } else if (diffInHours < 24) {
-            return `${diffInHours}h ago`;
-        } else if (diffInDays < 7) {
-            return `${diffInDays}d ago`;
-        } else {
-            return 'Last week';
-        }
-    };
-
-    // Fetch user activity status for chat participants
-    const fetchUserActivityStatus = async (userIds) => {
-        try {
-            const promises = userIds.map(async (userId) => {
-                const response = await axios.get(`${serverUrl}/api/user/activity/${userId}`, {
-                    withCredentials: true
-                });
-                return { userId, data: response.data };
-            });
-            
-            const results = await Promise.all(promises);
-            const newActivityMap = new Map(userActivityStatus);
-            
-            results.forEach(({ userId, data }) => {
-                newActivityMap.set(userId, data);
-            });
-            
-            setUserActivityStatus(newActivityMap);
-        } catch (error) {
-            console.error('Error fetching user activity status:', error);
-        }
-    };
 
     // Prevent body scroll when chat is open
     useEffect(() => {
@@ -113,34 +39,6 @@ const Chat = () => {
         };
     }, []);
 
-    // Track user activity
-    useEffect(() => {
-        let activityTimer;
-        
-        const handleActivity = () => {
-            updateUserActivity();
-            // Update activity every 2 minutes while user is active
-            clearTimeout(activityTimer);
-            activityTimer = setTimeout(updateUserActivity, 2 * 60 * 1000);
-        };
-
-        // Add activity listeners
-        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-        events.forEach(event => {
-            document.addEventListener(event, handleActivity, true);
-        });
-
-        // Initial activity update
-        handleActivity();
-
-        return () => {
-            events.forEach(event => {
-                document.removeEventListener(event, handleActivity, true);
-            });
-            clearTimeout(activityTimer);
-        };
-    }, [socket, user]);
-
     // Socket connection
     useEffect(() => {
         if (user) {
@@ -149,39 +47,22 @@ const Chat = () => {
 
             newSocket.emit('register', user._id);
 
-            newSocket.on('initialOnlineUsers', (onlineUserIds) => {
-                setOnlineUsers(new Set(onlineUserIds));
-                console.log('Initial online users:', onlineUserIds);
-            });
-
-            newSocket.on('userOnline', (userId) => {
-                setOnlineUsers(prev => new Set([...prev, userId]));
-                console.log('User came online:', userId);
+            newSocket.on('userOnline', (users) => {
+                setOnlineUsers(new Set(users));
             });
 
             newSocket.on('userOffline', (userId) => {
                 setOnlineUsers(prev => {
                     const newSet = new Set(prev);
                     newSet.delete(userId);
-                    console.log('User went offline:', userId);
                     return newSet;
                 });
             });
 
             newSocket.on('receiveMessage', (message) => {
-                console.log('Received message via socket:', message);
-                
-                // Only add messages from other users (our own messages are added immediately)
-                if (message.senderId !== user._id) {
-                    setMessages(prev => {
-                        // Check if message already exists to avoid duplicates
-                        const messageExists = prev.some(msg => msg._id === message._id);
-                        if (messageExists) return prev;
-                        return [...prev, message];
-                    });
+                if (selectedChat && (message.senderId === selectedChat.participants[0]._id || message.senderId === user._id)) {
+                    setMessages(prev => [...prev, message]);
                 }
-                
-                // Update chat list to reflect new message
                 fetchChats();
             });
 
@@ -205,20 +86,7 @@ const Chat = () => {
                 newSocket.disconnect();
             };
         }
-    }, [user, serverUrl]);
-
-    // Join/leave chat room when selectedChat changes
-    useEffect(() => {
-        if (socket && selectedChat) {
-            socket.emit('joinChat', selectedChat._id);
-            console.log('Joined chat room:', selectedChat._id);
-            
-            return () => {
-                socket.emit('leaveChat', selectedChat._id);
-                console.log('Left chat room:', selectedChat._id);
-            };
-        }
-    }, [socket, selectedChat]);
+    }, [user, serverUrl, selectedChat]);
 
     // Fetch chats
     const fetchChats = async () => {
@@ -226,25 +94,7 @@ const Chat = () => {
             const response = await axios.get(`${serverUrl}/api/chat/`, {
                 withCredentials: true
             });
-            const chats = response.data || [];
-            setChats(chats);
-            
-            // Get user IDs from chat participants to fetch their activity status
-            const userIds = [];
-            chats.forEach(chat => {
-                if (chat.participants) {
-                    chat.participants.forEach(participant => {
-                        if (participant._id !== user._id) {
-                            userIds.push(participant._id);
-                        }
-                    });
-                }
-            });
-            
-            // Fetch activity status for all chat participants
-            if (userIds.length > 0) {
-                fetchUserActivityStatus([...new Set(userIds)]); // Remove duplicates
-            }
+            setChats(response.data || []);
         } catch (error) {
             console.error('Error fetching chats:', error);
         }
@@ -256,22 +106,9 @@ const Chat = () => {
             const response = await axios.get(`${serverUrl}/api/chat/${chatId}/messages`, {
                 withCredentials: true
             });
-            const responseData = response.data;
-            
-            // Handle different response formats
-            if (Array.isArray(responseData)) {
-                // Direct array response
-                setMessages(responseData);
-            } else if (responseData && Array.isArray(responseData.messages)) {
-                // Object with messages array
-                setMessages(responseData.messages);
-            } else {
-                console.warn('Messages data is not in expected format:', responseData);
-                setMessages([]);
-            }
+            setMessages(response.data || []);
         } catch (error) {
             console.error('Error fetching messages:', error);
-            setMessages([]); // Reset to empty array on error
         }
     };
 
@@ -293,23 +130,10 @@ const Chat = () => {
 
     const handleSendMessage = async () => {
         if (newMessage.trim() && selectedChat && socket) {
-            const tempMessage = {
-                _id: `temp_${Date.now()}`,
-                content: newMessage,
-                senderId: user._id,
-                createdAt: new Date().toISOString(),
-                chatId: selectedChat._id
-            };
-
-            // Immediately add message to local state for instant UI update
-            setMessages(prev => [...prev, tempMessage]);
-            const messageContent = newMessage;
-            setNewMessage('');
-
             try {
                 const messageData = {
                     chatId: selectedChat._id,
-                    content: messageContent,
+                    content: newMessage,
                     senderId: user._id
                 };
 
@@ -317,26 +141,16 @@ const Chat = () => {
                     withCredentials: true
                 });
 
-                // Replace temp message with actual message from server
-                setMessages(prev => prev.map(msg => 
-                    msg._id === tempMessage._id ? response.data : msg
-                ));
-
-                console.log('Message sent successfully:', response.data);
+                socket.emit('sendMessage', response.data);
+                setNewMessage('');
                 
                 // Stop typing indicator
                 if (isTyping) {
                     socket.emit('stopTyping', { chatId: selectedChat._id, userId: user._id });
                     setIsTyping(false);
                 }
-                
-                // Update chat list
-                fetchChats();
             } catch (error) {
                 console.error('Error sending message:', error);
-                // Remove temp message on error
-                setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
-                setNewMessage(messageContent); // Restore message content
             }
         }
     };
@@ -388,7 +202,7 @@ const Chat = () => {
     };
 
     const getLastMessage = (chat) => {
-        if (!chat || !chat.lastMessage) return 'No messages yet';
+        if (!chat.lastMessage) return 'No messages yet';
         
         const isMe = chat.lastMessage.senderId === user._id;
         const content = chat.lastMessage.content;
@@ -400,21 +214,11 @@ const Chat = () => {
     };
 
     const getOtherParticipant = (chat) => {
-        if (!chat || !chat.participants || !Array.isArray(chat.participants)) {
-            return null;
-        }
         return chat.participants.find(p => p._id !== user._id);
     };
 
     const filteredChats = chats.filter(chat => {
-        if (!chat || !chat.participants) {
-            return false;
-        }
         const otherParticipant = getOtherParticipant(chat);
-        if (!otherParticipant) {
-            return false;
-        }
-        
         const matchesSearch = !searchQuery || 
             (otherParticipant?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
              otherParticipant?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -492,8 +296,6 @@ const Chat = () => {
                 {filteredChats.map((chat) => {
                     const otherParticipant = getOtherParticipant(chat);
                     const isOnline = onlineUsers.has(otherParticipant?._id);
-                    const activityData = userActivityStatus.get(otherParticipant?._id);
-                    const isActivelyOnline = isOnline && activityData?.isActivelyOnline;
                     
                     return (
                         <div
@@ -507,7 +309,7 @@ const Chat = () => {
                                     alt={`${otherParticipant?.firstName} ${otherParticipant?.lastName}`}
                                     className="w-12 h-12 rounded-full object-cover"
                                 />
-                                {isActivelyOnline && (
+                                {isOnline && (
                                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                                 )}
                             </div>
@@ -532,10 +334,7 @@ const Chat = () => {
 
             {/* Floating Action Button */}
             <div className="absolute bottom-6 right-6">
-                <button 
-                    onClick={startNewChat}
-                    className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors"
-                >
+                <button className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700">
                     <FaPlus className="w-5 h-5 text-white" />
                 </button>
             </div>
@@ -568,7 +367,7 @@ const Chat = () => {
                                         {otherParticipant?.firstName} {otherParticipant?.lastName}
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        {getUserActivityDisplay(otherParticipant?._id)}
+                                        {isOnline ? 'Mobile • 1h ago' : 'Offline'}
                                     </p>
                                 </div>
                             </div>
@@ -620,24 +419,10 @@ const Chat = () => {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                    {Array.isArray(messages) && messages.map((message, index) => {
+                    {messages.map((message, index) => {
                         const isMe = message.senderId === user._id;
                         const showDate = index === 0 || 
                             new Date(messages[index - 1].createdAt).toDateString() !== new Date(message.createdAt).toDateString();
-
-                        // Debug logging to see message structure
-                        if (index === 0) {
-                            console.log('Debug - First message structure:', {
-                                messageId: message._id,
-                                content: message.content,
-                                isMe: isMe,
-                                senderId: message.senderId,
-                                currentUserId: user._id,
-                                sender: message.sender,
-                                senderProfileImage: message.sender?.profileImage,
-                                senderProfilePicture: message.sender?.profilePicture
-                            });
-                        }
 
                         return (
                             <div key={message._id}>
@@ -654,7 +439,7 @@ const Chat = () => {
                                 <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`}>
                                     {!isMe && (
                                         <img
-                                            src={message.sender?.profileImage || message.sender?.profilePicture || dp}
+                                            src={otherParticipant?.profilePicture || dp}
                                             alt=""
                                             className="w-6 h-6 rounded-full mr-2 mt-1"
                                         />
@@ -675,7 +460,7 @@ const Chat = () => {
                                     
                                     {isMe && (
                                         <img
-                                            src={message.sender?.profileImage || message.sender?.profilePicture || user?.profilePicture || user?.profileImage || dp}
+                                            src={user?.profilePicture || dp}
                                             alt=""
                                             className="w-6 h-6 rounded-full ml-2 mt-1"
                                         />
@@ -723,16 +508,8 @@ const Chat = () => {
                                 }}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Write a message..."
-                                className="w-full px-4 py-2 pr-12 bg-gray-100 rounded-full text-sm border-none outline-none focus:bg-gray-200"
+                                className="w-full px-4 py-2 bg-gray-100 rounded-full text-sm border-none outline-none focus:bg-gray-200"
                             />
-                            {newMessage.trim() && (
-                                <button 
-                                    onClick={handleSendMessage}
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-blue-600 rounded-full hover:bg-blue-700"
-                                >
-                                    <FaPaperPlane className="w-3 h-3 text-white" />
-                                </button>
-                            )}
                         </div>
                         
                         <button className="p-2">
@@ -747,22 +524,20 @@ const Chat = () => {
     // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (showSettingsMenu || showChatOptions || showDesktopSettings || showDesktopChatOptions) {
+            if (showSettingsMenu || showChatOptions) {
                 setShowSettingsMenu(false);
                 setShowChatOptions(false);
-                setShowDesktopSettings(false);
-                setShowDesktopChatOptions(false);
             }
         };
 
-        if (showSettingsMenu || showChatOptions || showDesktopSettings || showDesktopChatOptions) {
+        if (showSettingsMenu || showChatOptions) {
             document.addEventListener('click', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('click', handleClickOutside);
         };
-    }, [showSettingsMenu, showChatOptions, showDesktopSettings, showDesktopChatOptions]);
+    }, [showSettingsMenu, showChatOptions]);
 
     if (!user) {
         return (
@@ -828,8 +603,6 @@ const Chat = () => {
                             {filteredChats.map((chat) => {
                                 const otherParticipant = getOtherParticipant(chat);
                                 const isOnline = onlineUsers.has(otherParticipant?._id);
-                                const activityData = userActivityStatus.get(otherParticipant?._id);
-                                const isActivelyOnline = isOnline && activityData?.isActivelyOnline;
                                 
                                 return (
                                     <div
@@ -845,7 +618,7 @@ const Chat = () => {
                                                 alt={`${otherParticipant?.firstName} ${otherParticipant?.lastName}`}
                                                 className="w-12 h-12 rounded-full object-cover"
                                             />
-                                            {isActivelyOnline && (
+                                            {isOnline && (
                                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                                             )}
                                         </div>
@@ -887,7 +660,7 @@ const Chat = () => {
                                                     {getOtherParticipant(selectedChat)?.firstName} {getOtherParticipant(selectedChat)?.lastName}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">
-                                                    {getUserActivityDisplay(getOtherParticipant(selectedChat)?._id)}
+                                                    {onlineUsers.has(getOtherParticipant(selectedChat)?._id) ? 'Online' : 'Offline'}
                                                 </p>
                                             </div>
                                         </div>
@@ -918,7 +691,7 @@ const Chat = () => {
 
                                 {/* Desktop Messages */}
                                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                                    {Array.isArray(messages) && messages.map((message, index) => {
+                                    {messages.map((message, index) => {
                                         const isMe = message.senderId === user._id;
                                         const showDate = index === 0 || 
                                             new Date(messages[index - 1].createdAt).toDateString() !== new Date(message.createdAt).toDateString();
@@ -959,7 +732,7 @@ const Chat = () => {
                                                     
                                                     {isMe && (
                                                         <img
-                                                            src={user?.profilePicture || user?.profileImage || dp}
+                                                            src={user?.profilePicture || dp}
                                                             alt=""
                                                             className="w-8 h-8 rounded-full ml-3 mt-1"
                                                         />

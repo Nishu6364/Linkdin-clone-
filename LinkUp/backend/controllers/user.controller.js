@@ -246,3 +246,30 @@ export const getAllUsers = async (req, res) => {
         });
     }
 }
+
+export const getUserActivityStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId).select('isOnline lastSeen lastActivity firstName lastName');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Calculate if user is truly active (within last 5 minutes)
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const isActivelyOnline = user.isOnline && user.lastActivity && user.lastActivity > fiveMinutesAgo;
+
+        return res.status(200).json({
+            userId: user._id,
+            isOnline: user.isOnline,
+            isActivelyOnline,
+            lastSeen: user.lastSeen,
+            lastActivity: user.lastActivity,
+            name: `${user.firstName} ${user.lastName}`
+        });
+    } catch (error) {
+        console.error("Error getting user activity status:", error);
+        return res.status(500).json({ message: "Error getting user activity status" });
+    }
+}

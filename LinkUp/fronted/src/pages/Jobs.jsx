@@ -42,7 +42,7 @@ function Jobs() {
   ]
 
   return (
-    <div className='w-full min-h-screen bg-gray-50 pt-[70px] pb-16 md:pb-0'>
+    <div className='w-full min-h-screen bg-gray-50 pt-[70px] pb-20 md:pb-0'>
       <div className='max-w-[1200px] mx-auto px-2 sm:px-4'>
         <div className='pt-4 sm:pt-6'>
           <Nav/>

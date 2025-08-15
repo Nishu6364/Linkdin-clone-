@@ -84,6 +84,10 @@ const userSchema=new mongoose.Schema({
     lastSeen: {
         type: Date,
         default: Date.now
+    },
+    lastActivity: {
+        type: Date,
+        default: Date.now
     }
 
 },{timestamps:true})

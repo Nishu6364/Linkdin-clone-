@@ -52,7 +52,7 @@ function Notification() {
   }, []);
 
   return (
-    <div className='w-screen min-h-screen bg-[#f0efe7] pt-[100px] pb-16 md:pb-0 px-4 md:px-[40px] flex flex-col items-center gap-6'>
+    <div className='w-screen min-h-screen bg-[#f0efe7] pt-[100px] pb-20 md:pb-0 px-4 md:px-[40px] flex flex-col items-center gap-6'>
       <Nav />
       <MobileBottomNav />
       

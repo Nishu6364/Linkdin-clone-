@@ -12,22 +12,21 @@ export const getUserChats = async (req, res) => {
             participants: { $in: [userId] }
         }).populate({
             path: 'participants',
-            match: { _id: { $ne: userId } },
             select: 'firstName lastName userName profileImage isOnline lastSeen'
         }).populate('lastMessage')
         .sort({ updatedAt: -1 });
 
-        const filteredChats = chats.filter(chat => chat.participants.length > 0);
-
-        // Transform the data to match frontend expectations
-        const transformedChats = filteredChats.map(chat => ({
-            _id: chat._id,
-            participant: chat.participants[0], // Get the other participant
-            lastMessage: chat.lastMessage,
-            lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
-            createdAt: chat.createdAt,
-            updatedAt: chat.updatedAt
-        }));
+        // Transform the data to map profileImage to profilePicture
+        const transformedChats = chats.map(chat => {
+            const chatObj = chat.toObject();
+            return {
+                ...chatObj,
+                participants: chatObj.participants.map(participant => ({
+                    ...participant,
+                    profilePicture: participant.profileImage
+                }))
+            };
+        });
 
         res.status(200).json(transformedChats);
     } catch (error) {
@@ -143,7 +142,10 @@ export const createOrGetChat = async (req, res) => {
         // Transform to match frontend expectations
         const transformedChat = {
             _id: chat._id,
-            participant: otherParticipant,
+            participant: {
+                ...otherParticipant.toObject(),
+                profilePicture: otherParticipant.profileImage
+            },
             lastMessage: chat.lastMessage,
             lastMessageTime: chat.lastMessage?.createdAt || chat.updatedAt,
             createdAt: chat.createdAt,
@@ -294,29 +296,21 @@ export const sendMessage = async (req, res) => {
         const populatedMessage = await Message.findById(message._id)
             .populate('sender', 'firstName lastName userName profileImage');
 
-        // Emit message to all participants via Socket.IO
-        const otherParticipants = chat.participants.filter(p => p.toString() !== userId);
-        
-        otherParticipants.forEach(participantId => {
-            const participantSocketId = userSocketMap.get(participantId.toString());
-            if (participantSocketId) {
-                io.to(participantSocketId).emit('newMessage', {
-                    chatId: chatId,
-                    message: populatedMessage
-                });
-            }
-        });
+        // Transform message to match frontend expectations
+        const transformedMessage = {
+            _id: populatedMessage._id,
+            content: populatedMessage.content,
+            sender: populatedMessage.sender,
+            senderId: populatedMessage.sender._id,
+            createdAt: populatedMessage.createdAt,
+            messageType: populatedMessage.messageType,
+            chatId: chatId
+        };
 
-        // Also emit to sender for confirmation
-        const senderSocketId = userSocketMap.get(userId);
-        if (senderSocketId) {
-            io.to(senderSocketId).emit('messageSent', {
-                chatId: chatId,
-                message: populatedMessage
-            });
-        }
+        // Emit message to chat room participants via Socket.IO
+        io.to(chatId).emit('receiveMessage', transformedMessage);
 
-        res.status(201).json(populatedMessage);
+        res.status(201).json(transformedMessage);
     } catch (error) {
         console.error('Error sending message:', error);
         res.status(500).json({ message: 'Failed to send message', error: error.message });

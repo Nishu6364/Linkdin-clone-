@@ -78,7 +78,7 @@ function Network() {
     }, []);
 
     return (
-        <div className="w-screen min-h-screen bg-gray-100 pt-[100px] pb-16 md:pb-0">
+        <div className="w-screen min-h-screen bg-gray-100 pt-[100px] pb-20 md:pb-0">
             <Nav />
             <MobileBottomNav />
             

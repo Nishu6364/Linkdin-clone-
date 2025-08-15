@@ -621,9 +621,15 @@ const Chat = () => {
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                     {Array.isArray(messages) && messages.map((message, index) => {
-                        const isMe = message.senderId === user._id;
+                        // Handle both senderId and sender._id (for compatibility after refresh)
+                        const actualSenderId = message.senderId || message.sender?._id;
+                        const isMe = actualSenderId === user._id;
                         const showDate = index === 0 || 
                             new Date(messages[index - 1].createdAt).toDateString() !== new Date(message.createdAt).toDateString();
+
+                        // Check if this is the first message from this sender in a sequence (LinkedIn-style)
+                        const prevSenderId = messages[index - 1]?.senderId || messages[index - 1]?.sender?._id;
+                        const isFirstFromSender = index === 0 || prevSenderId !== actualSenderId;
 
                         // Debug logging to see message structure
                         if (index === 0) {
@@ -631,11 +637,12 @@ const Chat = () => {
                                 messageId: message._id,
                                 content: message.content,
                                 isMe: isMe,
-                                senderId: message.senderId,
+                                senderId: message.senderId || message.sender?._id,
                                 currentUserId: user._id,
                                 sender: message.sender,
                                 senderProfileImage: message.sender?.profileImage,
-                                senderProfilePicture: message.sender?.profilePicture
+                                senderProfilePicture: message.sender?.profilePicture,
+                                otherParticipant: otherParticipant
                             });
                         }
 
@@ -652,12 +659,17 @@ const Chat = () => {
                                 )}
                                 
                                 <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`}>
-                                    {!isMe && (
+                                    {/* Show other user's profile only on first message in sequence */}
+                                    {!isMe && isFirstFromSender && (
                                         <img
-                                            src={message.sender?.profileImage || message.sender?.profilePicture || dp}
+                                            src={message.sender?.profileImage || message.sender?.profilePicture || otherParticipant?.profilePicture || dp}
                                             alt=""
                                             className="w-6 h-6 rounded-full mr-2 mt-1"
                                         />
+                                    )}
+                                    {/* Spacer for non-first messages to maintain alignment */}
+                                    {!isMe && !isFirstFromSender && (
+                                        <div className="w-6 mr-2"></div>
                                     )}
                                     
                                     <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
@@ -673,9 +685,14 @@ const Chat = () => {
                                         </p>
                                     </div>
                                     
-                                    {isMe && (
+                                    {/* Spacer for non-first messages to maintain alignment */}
+                                    {isMe && !isFirstFromSender && (
+                                        <div className="w-6 ml-2"></div>
+                                    )}
+                                    {/* Show your profile only on first message in sequence */}
+                                    {isMe && isFirstFromSender && (
                                         <img
-                                            src={message.sender?.profileImage || message.sender?.profilePicture || user?.profilePicture || user?.profileImage || dp}
+                                            src={user?.profileImage || user?.profilePicture || dp}
                                             alt=""
                                             className="w-6 h-6 rounded-full ml-2 mt-1"
                                         />
@@ -919,9 +936,15 @@ const Chat = () => {
                                 {/* Desktop Messages */}
                                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                                     {Array.isArray(messages) && messages.map((message, index) => {
-                                        const isMe = message.senderId === user._id;
+                                        // Handle both senderId and sender._id (for compatibility after refresh)
+                                        const actualSenderId = message.senderId || message.sender?._id;
+                                        const isMe = actualSenderId === user._id;
                                         const showDate = index === 0 || 
                                             new Date(messages[index - 1].createdAt).toDateString() !== new Date(message.createdAt).toDateString();
+
+                                        // Check if this is the first message from this sender in a sequence (LinkedIn-style)
+                                        const prevSenderId = messages[index - 1]?.senderId || messages[index - 1]?.sender?._id;
+                                        const isFirstFromSender = index === 0 || prevSenderId !== actualSenderId;
 
                                         return (
                                             <div key={message._id}>
@@ -936,12 +959,17 @@ const Chat = () => {
                                                 )}
                                                 
                                                 <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`}>
-                                                    {!isMe && (
+                                                    {/* Show other user's profile only on first message in sequence */}
+                                                    {!isMe && isFirstFromSender && (
                                                         <img
-                                                            src={getOtherParticipant(selectedChat)?.profilePicture || dp}
+                                                            src={getOtherParticipant(selectedChat)?.profilePicture || getOtherParticipant(selectedChat)?.profileImage || dp}
                                                             alt=""
                                                             className="w-8 h-8 rounded-full mr-3 mt-1"
                                                         />
+                                                    )}
+                                                    {/* Spacer for non-first messages to maintain alignment */}
+                                                    {!isMe && !isFirstFromSender && (
+                                                        <div className="w-8 mr-3"></div>
                                                     )}
                                                     
                                                     <div className={`max-w-md px-4 py-2 rounded-lg ${
@@ -957,9 +985,14 @@ const Chat = () => {
                                                         </p>
                                                     </div>
                                                     
-                                                    {isMe && (
+                                                    {/* Spacer for non-first messages to maintain alignment */}
+                                                    {isMe && !isFirstFromSender && (
+                                                        <div className="w-8 ml-3"></div>
+                                                    )}
+                                                    {/* Show your profile only on first message in sequence */}
+                                                    {isMe && isFirstFromSender && (
                                                         <img
-                                                            src={user?.profilePicture || user?.profileImage || dp}
+                                                            src={user?.profileImage || user?.profilePicture || dp}
                                                             alt=""
                                                             className="w-8 h-8 rounded-full ml-3 mt-1"
                                                         />

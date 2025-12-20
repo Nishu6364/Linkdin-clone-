@@ -84,6 +84,13 @@ export const getAllJobs = async (req, res) => {
         // Build filter object
         const filter = { isActive: true };
 
+        // Filter out jobs with closed deadlines
+        filter.$or = [
+            { applicationDeadline: { $exists: false } }, // Jobs with no deadline
+            { applicationDeadline: null }, // Jobs with null deadline
+            { applicationDeadline: { $gte: new Date() } } // Jobs with deadline in the future or today
+        ];
+
         if (type && type !== 'All Jobs') {
             filter.type = type;
         }

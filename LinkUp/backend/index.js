@@ -10,6 +10,7 @@ import postRouter from "./routes/post.route.js";
 import connectionRouter from "./routes/connection.route.js";
 import savedPostRouter from "./routes/savedPost.routes.js";
 import chatRouter from "./routes/chat.routes.js";
+import jobRouter from "./routes/job.routes.js";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -22,11 +23,15 @@ export const io = new Server(server, {
   cors: { 
     origin: ["https://linkup-frontend-voty.onrender.com", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"],
     credentials: true,
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
   },
 });
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve static files (for resume downloads)
+app.use('/public', express.static('public'));
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -38,7 +43,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
     exposedHeaders: ["Set-Cookie"]
   })
@@ -76,6 +81,7 @@ app.use("/api/connection", connectionRouter);
 app.use("/api/notification",notificationRouter)
 app.use("/api/saved", savedPostRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/jobs", jobRouter);
 
 export const userSocketMap = new Map();
 

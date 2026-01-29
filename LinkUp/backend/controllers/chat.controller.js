@@ -1,22 +1,34 @@
+// Import required models
 import Chat from '../models/chat.model.js';
 import Message from '../models/message.model.js';
 import User from '../models/user.model.js';
+
+// Import socket.io instance and user-socket mapping
 import { io, userSocketMap } from '../index.js';
 
-// Get all chats for a user
+/* =========================================================
+   GET ALL CHATS OF LOGGED-IN USER
+========================================================= */
 export const getUserChats = async (req, res) => {
     try {
+        // Logged-in user ID (set by auth middleware)
         const userId = req.userId;
         
+        // Find chats where user is a participant
         const chats = await Chat.find({
             participants: { $in: [userId] }
-        }).populate({
+        })
+        // Populate participant details
+        .populate({
             path: 'participants',
             select: 'firstName lastName userName profileImage isOnline lastSeen'
-        }).populate('lastMessage')
+        })
+        // Populate last message
+        .populate('lastMessage')
+        // Latest chats first
         .sort({ updatedAt: -1 });
 
-        // Transform the data to map profileImage to profilePicture
+        // Convert profileImage -> profilePicture (frontend requirement)
         const transformedChats = chats.map(chat => {
             const chatObj = chat.toObject();
             return {
@@ -38,32 +50,25 @@ export const getUserChats = async (req, res) => {
     }
 };
 
-// Create or get existing chat
+/* =========================================================
+   CREATE NEW CHAT OR RETURN EXISTING CHAT
+========================================================= */
 export const createOrGetChat = async (req, res) => {
     try {
         const { participantId } = req.body;
         const userId = req.userId;
-        
-        console.log('createOrGetChat called with:', { participantId, userId, body: req.body });
-        
+
+        // Validation checks
         if (!participantId) {
-            console.log('Missing participantId');
-            return res.status(400).json({
-                success: false,
-                message: 'participantId is required'
-            });
+            return res.status(400).json({ success: false, message: 'participantId is required' });
         }
 
         if (!userId) {
-            console.log('Missing userId from auth middleware');
-            return res.status(401).json({
-                success: false,
-                message: 'User not authenticated'
-            });
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
         }
 
+        // Prevent self-chat
         if (participantId === userId) {
-            console.log('User trying to chat with themselves');
             return res.status(400).json({
                 success: false,
                 message: 'Cannot create chat with yourself'
@@ -76,70 +81,48 @@ export const createOrGetChat = async (req, res) => {
             User.findById(participantId)
         ]);
 
-        if (!currentUser) {
-            console.log('Current user not found:', userId);
-            return res.status(404).json({
-                success: false,
-                message: 'Current user not found'
-            });
-        }
-
-        if (!otherUser) {
-            console.log('Other user not found:', participantId);
+        if (!currentUser || !otherUser) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
             });
         }
 
-        console.log('Both users found:', { currentUser: currentUser.userName, otherUser: otherUser.userName });
-
         // Check if chat already exists
         let chat = await Chat.findOne({
             participants: { $all: [userId, participantId] }
-        }).populate({
+        })
+        .populate({
             path: 'participants',
             select: 'firstName lastName userName profileImage isOnline lastSeen'
-        }).populate('lastMessage');
+        })
+        .populate('lastMessage');
 
-        console.log('Existing chat found:', chat ? 'Yes' : 'No');
-
+        // If chat does not exist, create a new one
         if (!chat) {
-            console.log('Creating new chat...');
-            
-            // Sort participants to ensure consistent ordering
+            // Sort IDs to avoid duplicate chat entries
             const sortedParticipants = [userId, participantId].sort();
-            
-            // Create new chat
+
             chat = new Chat({
                 participants: sortedParticipants,
                 lastMessageTime: new Date()
             });
-            
+
             await chat.save();
-            
-            // Populate the participants after creation
+
+            // Populate participants after creation
             await chat.populate({
                 path: 'participants',
                 select: 'firstName lastName userName profileImage isOnline lastSeen'
             });
-            
-            console.log('Chat created with ID:', chat._id);
         }
 
-        // Get the other participant (not the current user)
-        let otherParticipant = chat.participants.find(p => p._id.toString() !== userId);
-        
-        if (!otherParticipant) {
-            console.log('No other participant found, fetching directly...');
-            otherParticipant = await User.findById(participantId).select('firstName lastName userName profileImage isOnline lastSeen');
-            if (!otherParticipant) {
-                throw new Error('Other participant not found');
-            }
-            console.log('Direct other user found:', otherParticipant.userName);
-        }
+        // Find the other participant (not logged-in user)
+        let otherParticipant = chat.participants.find(
+            p => p._id.toString() !== userId
+        );
 
-        // Transform to match frontend expectations
+        // Prepare response structure for frontend
         const transformedChat = {
             _id: chat._id,
             participant: {
@@ -152,47 +135,33 @@ export const createOrGetChat = async (req, res) => {
             updatedAt: chat.updatedAt
         };
 
-        console.log('Transformed chat being returned:', {
-            chatId: transformedChat._id,
-            participantName: transformedChat.participant?.userName || 'unknown',
-            participantId: transformedChat.participant?._id
-        });
-
         res.status(200).json({
             success: true,
             chat: transformedChat
         });
     } catch (error) {
-        console.error('Error creating/fetching chat:', {
-            message: error.message,
-            stack: error.stack,
-            userId: req.userId,
-            participantId: req.body?.participantId,
-            errorName: error.name,
-            errorCode: error.code
-        });
+        console.error('Error creating/fetching chat:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? {
-                message: error.message,
-                name: error.name,
-                code: error.code
-            } : undefined
+            message: 'Internal server error'
         });
     }
 };
 
-// Get messages for a specific chat
+/* =========================================================
+   GET MESSAGES OF A CHAT (PAGINATED)
+========================================================= */
 export const getChatMessages = async (req, res) => {
     try {
         const userId = req.userId;
         const { chatId } = req.params;
+
+        // Pagination params
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
 
-        // Verify user is participant in this chat
+        // Ensure user is part of the chat
         const chat = await Chat.findOne({
             _id: chatId,
             participants: userId
@@ -202,6 +171,7 @@ export const getChatMessages = async (req, res) => {
             return res.status(404).json({ message: 'Chat not found or access denied' });
         }
 
+        // Fetch messages (latest first)
         const messages = await Message.find({
             chat: chatId,
             isDeleted: false
@@ -210,17 +180,6 @@ export const getChatMessages = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(limit)
         .skip(skip);
-
-        console.log('Messages found:', messages.length);
-        if (messages.length > 0) {
-            console.log('Sample message sender:', JSON.stringify({
-                _id: messages[0].sender._id,
-                firstName: messages[0].sender.firstName,
-                lastName: messages[0].sender.lastName,
-                userName: messages[0].sender.userName,
-                profileImage: messages[0].sender.profileImage
-            }, null, 2));
-        }
 
         // Mark messages as read
         await Message.updateMany(
@@ -231,16 +190,13 @@ export const getChatMessages = async (req, res) => {
             },
             {
                 $push: {
-                    readBy: {
-                        user: userId,
-                        readAt: new Date()
-                    }
+                    readBy: { user: userId, readAt: new Date() }
                 }
             }
         );
 
         res.status(200).json({
-            messages: messages.reverse(), // Reverse to show oldest first
+            messages: messages.reverse(), // Oldest first
             pagination: {
                 page,
                 limit,
@@ -248,12 +204,13 @@ export const getChatMessages = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error fetching chat messages:', error);
-        res.status(500).json({ message: 'Failed to fetch messages', error: error.message });
+        res.status(500).json({ message: 'Failed to fetch messages' });
     }
 };
 
-// Send a message
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
 export const sendMessage = async (req, res) => {
     try {
         const userId = req.userId;
@@ -263,7 +220,7 @@ export const sendMessage = async (req, res) => {
             return res.status(400).json({ message: 'Chat ID and content are required' });
         }
 
-        // Verify user is participant in this chat
+        // Verify user is chat participant
         const chat = await Chat.findOne({
             _id: chatId,
             participants: userId
@@ -279,50 +236,38 @@ export const sendMessage = async (req, res) => {
             sender: userId,
             content: content.trim(),
             messageType,
-            readBy: [{
-                user: userId,
-                readAt: new Date()
-            }]
+            readBy: [{ user: userId, readAt: new Date() }]
         });
 
         await message.save();
 
-        // Update chat's last message
+        // Update last message info in chat
         chat.lastMessage = message._id;
         chat.lastMessageTime = new Date();
         await chat.save();
 
-        // Populate message for response
+        // Populate sender info
         const populatedMessage = await Message.findById(message._id)
             .populate('sender', 'firstName lastName userName profileImage');
 
-        // Transform message to match frontend expectations
-        const transformedMessage = {
-            _id: populatedMessage._id,
-            content: populatedMessage.content,
-            sender: populatedMessage.sender,
-            senderId: populatedMessage.sender._id,
-            createdAt: populatedMessage.createdAt,
-            messageType: populatedMessage.messageType,
-            chatId: chatId
-        };
+        // Emit real-time message via socket
+        io.to(chatId).emit('receiveMessage', populatedMessage);
 
-        // Emit message to chat room participants via Socket.IO
-        io.to(chatId).emit('receiveMessage', transformedMessage);
-
-        res.status(201).json(transformedMessage);
+        res.status(201).json(populatedMessage);
     } catch (error) {
-        console.error('Error sending message:', error);
-        res.status(500).json({ message: 'Failed to send message', error: error.message });
+        res.status(500).json({ message: 'Failed to send message' });
     }
 };
 
-// Delete a message
+/* =========================================================
+   DELETE MESSAGE (SOFT DELETE)
+========================================================= */
 export const deleteMessage = async (req, res) => {
     try {
         const userId = req.userId;
         const { messageId } = req.params;
 
+        // Only sender can delete their message
         const message = await Message.findOne({
             _id: messageId,
             sender: userId
@@ -332,24 +277,24 @@ export const deleteMessage = async (req, res) => {
             return res.status(404).json({ message: 'Message not found or access denied' });
         }
 
+        // Soft delete
         message.isDeleted = true;
         await message.save();
 
-        // Emit message deletion to chat participants
+        // Notify all chat participants via socket
         const chat = await Chat.findById(message.chat);
         chat.participants.forEach(participantId => {
-            const participantSocketId = userSocketMap.get(participantId.toString());
-            if (participantSocketId) {
-                io.to(participantSocketId).emit('messageDeleted', {
+            const socketId = userSocketMap.get(participantId.toString());
+            if (socketId) {
+                io.to(socketId).emit('messageDeleted', {
                     chatId: message.chat,
-                    messageId: messageId
+                    messageId
                 });
             }
         });
 
         res.status(200).json({ message: 'Message deleted successfully' });
     } catch (error) {
-        console.error('Error deleting message:', error);
-        res.status(500).json({ message: 'Failed to delete message', error: error.message });
+        res.status(500).json({ message: 'Failed to delete message' });
     }
 };
